@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - Centro de Comando IA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 2rem;
+            text-align: center;
+        }
+        .error-container {
+            background-color: #1a1a1a;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            max-width: 600px;
+            border-left: 5px solid #dc3545;
+        }
+        h1 {
+            color: #dc3545;
+            font-size: 2rem;
+        }
+        h1 i {
+            margin-right: 15px;
+        }
+        p {
+            line-height: 1.6;
+            color: #a0a0a0;
+        }
+        strong {
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <!-- El contenido se inyecta desde Flask. El filtro 'safe' permite renderizar el HTML. -->
+        {{ error_content | safe }}
+    </div>
+</body>
+</html>

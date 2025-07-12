@@ -1,0 +1,15 @@
+{
+  "cliente_moxi_odontologia": {
+    "client_name": "Clínica Odontológica MOXI",
+    "ad_account_ids": [
+      "act_190580319583987"
+    ]
+  },
+  "cliente_nuevo_gimnasio": {
+    "client_name": "Gimnasio FuerteFit",
+    "ad_account_ids": [
+      "act_1111111111111111",
+      "act_2222222222222222"
+    ]
+  }
+}
