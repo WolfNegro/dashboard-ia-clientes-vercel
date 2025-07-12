@@ -106,7 +106,7 @@ def analizar_campana_route():
         metricas_raw = fb.get_metrics(access_token, campaign_id, since, until)
         metricas_diarias = procesar_metricas_diarias(metricas_raw)
         metricas_totales = procesar_metricas_totales(metricas_raw)
-        top_ads_raw = fb.get_top_performing_ads(access_token, campaign_id, since, until, limit=4)
+        top_ads_raw = fb.get_top_performing_ads(access_token, campaign_id, since, until, limit=2)
         top_anuncios_procesados = []
         for ad_data in top_ads_raw:
             insights_anuncio = procesar_metricas_totales(ad_data.get("insights", []))

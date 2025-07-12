@@ -138,7 +138,7 @@ class FacebookAdsManager:
         }
         return self._make_request(url, params=params).get("data", [])
 
-    def get_top_performing_ads(self, access_token: str, campaign_id: str, since: str, until: str, limit: int = 4) -> List[Dict[str, Any]]:
+    def get_top_performing_ads(self, access_token: str, campaign_id: str, since: str, until: str, limit: int = 2) -> List[Dict[str, Any]]:
         """
         Obtiene los anuncios con mayor rendimiento.
         Esta es la versión más robusta, que procesa cada anuncio individualmente para maximizar la fiabilidad.
