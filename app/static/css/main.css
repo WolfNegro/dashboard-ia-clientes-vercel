@@ -1,0 +1,271 @@
+/* === ESTILO FINAL V15.0 - AJUSTE DE MODAL Y LLAMADA A LA ACCIÓN === */
+
+/* --- 1. PALETA DE COLORES Y VARIABLES GLOBALES --- */
+:root {
+  --bg-dark: #0d1117; 
+  --primary: #161b22; 
+  --secondary: #0d1117; 
+  --accent: #2ea7f9; 
+  --accent-glow: rgba(46, 167, 249, 0.25);
+  --success: #28a745;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --text-light: #f0f6fc; 
+  --text-medium: #8b949e; 
+  --text-headings: #f0f6fc; 
+  --border-color: #30363d; 
+  --border-radius: 8px; 
+  --card-padding: 24px; 
+  --font-family: 'Poppins', sans-serif;
+}
+
+/* --- 2. ESTILOS BASE Y GENERALES --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-family); background-color: var(--bg-dark); color: var(--text-light); font-size: 14px; line-height: 1.6; }
+h1, h2 { font-family: 'Poppins', sans-serif; color: var(--text-headings); font-weight: 600; }
+h1 { font-size: 2em; margin-bottom: 24px; text-align: center; }
+h2 { font-size: 1.25em; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; display: flex; justify-content: flex-start; align-items: center; }
+i { margin-right: 8px; color: var(--accent); }
+
+/* --- 3. LOADER Y APP CONTENT --- */
+#loader { display: flex; justify-content: center; align-items: center; height: 100vh; }
+.spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid var(--accent); width: 50px; height: 50px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* --- 4. PANEL DE CONTROL --- */
+.control-panel { display: flex; flex-wrap: wrap; gap: 16px; padding: var(--card-padding); background-color: var(--primary); border-radius: var(--border-radius); margin-bottom: 24px; border: 1px solid var(--border-color); }
+.control-panel select, .control-panel input { font-family: var(--font-family); background-color: var(--bg-dark); color: var(--text-light); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; flex-grow: 1; }
+.control-panel button { font-family: var(--font-family); background-color: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer; transition: background-color 0.2s; font-weight: 600; }
+.control-panel button:disabled { background-color: #30363d; cursor: not-allowed; }
+.control-panel button:not(:disabled):hover { background-color: #58b9fa; }
+
+/* --- 5. GRID PRINCIPAL Y CARDS --- */
+#app-content { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.dashboard-grid-main { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
+.card { background-color: var(--primary); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: var(--card-padding); }
+#metricas-card { grid-column: 1 / 9; }
+#metricas-hoy-ayer-card { grid-column: 9 / 13; }
+#ranking-card { grid-column: 1 / 5; }
+#briefing-card { grid-column: 5 / 13; }
+#graficos-evolucion-card { grid-column: 1 / 13; }
+#top-anuncios-card { grid-column: 1 / 13; }
+
+/* --- 6. MÉTRICAS, RANKING, ETC. --- */
+#metricas-grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; }
+.metrica-card { background: var(--secondary); padding: 16px; border-radius: 6px; border-left: 4px solid var(--accent); text-align: center; }
+.metrica-card h3 { font-size: 0.9em; color: var(--text-medium); margin-bottom: 8px; font-weight: 500; }
+.metrica-card .valor { font-size: 1.75em; font-weight: 700; color: var(--text-light); }
+
+#metricas-hoy-ayer-card { 
+    padding: 0; 
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative; /* CIRUGÍA: Necesario para posicionar el prompt */
+    display: flex; /* CIRUGÍA: Para centrar el contenido y el prompt */
+    align-items: center;
+    justify-content: center;
+}
+#metricas-hoy-ayer-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px -10px var(--accent-glow);
+}
+.metricas-comparativa-container { 
+    position: relative; 
+    display: flex;
+    width: 100%; /* CIRUGÍA: Asegura que ocupe todo el espacio */
+    transition: opacity 0.3s ease;
+}
+.metrica-diaria-box { flex: 1; padding: var(--card-padding); }
+.metrica-diaria-box:first-child { border-right: 1px solid var(--border-color); }
+.metrica-diaria-box h3 { text-align: center; font-size: 1.1em; margin-bottom: 16px; color: var(--text-medium); }
+#metricas-hoy-grid-container, #metricas-ayer-grid-container { display: grid; gap: 12px; }
+.metrica-diaria-box .metrica-card { padding: 12px; }
+.metrica-diaria-box .metrica-card .valor { font-size: 1.4em; }
+.metrica-diaria-box .metrica-card h3 { font-size: 0.8em; margin-bottom: 4px; }
+.comparativa { font-size: 0.9em; font-weight: 600; }
+.comparativa.positive { color: var(--success); }
+.comparativa.negative { color: var(--danger); }
+.ad-name .ad-id { color: var(--text-medium); font-weight: 400; margin-left: 8px; font-size: 0.9em; }
+
+/* ============================================================================== */
+/*           CIRUGÍA: INICIO - Estilos para la Llamada a la Acción                */
+/* ============================================================================== */
+.card-hover-prompt {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(13, 17, 23, 0.85); /* Fondo oscuro semitransparente */
+    color: var(--text-light);
+    font-size: 0.9em;
+    font-weight: 500;
+    text-align: center;
+    pointer-events: none; /* Importante: permite que el clic llegue a la tarjeta */
+    opacity: 0; /* Oculto por defecto */
+    transition: opacity 0.3s ease;
+    border-radius: var(--border-radius); /* Para que coincida con la tarjeta */
+}
+.card-hover-prompt i {
+    font-size: 1.5em;
+    margin-bottom: 8px;
+}
+#metricas-hoy-ayer-card:hover .metricas-comparativa-container {
+    opacity: 0.2; /* Difumina el contenido de fondo */
+}
+#metricas-hoy-ayer-card:hover .card-hover-prompt {
+    opacity: 1; /* Muestra la llamada a la acción */
+}
+/* ============================================================================== */
+/*           CIRUGÍA: FIN                                                         */
+/* ============================================================================== */
+
+/* ... (Estilos de ranking, etc. sin cambios) ... */
+#ranking-container{display:flex;flex-direction:column;gap:28px}.ranking-widget{font-size:.9em}.ranking-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}.ranking-title{font-weight:600}.ranking-position{color:var(--text-medium);font-weight:500}.ranking-bar-container{position:relative;margin-bottom:24px}.ranking-bar{width:100%;height:10px;border-radius:5px}.ranking-bar.gradient-results{background:linear-gradient(to right,var(--danger),var(--warning),var(--success))}.ranking-bar.gradient-cpr{background:linear-gradient(to right,var(--success),var(--warning),var(--danger))}.ranking-marker{position:absolute;top:-2px;width:4px;height:14px;background-color:#fff;border-radius:2px;border:1px solid #000;transition:left .5s ease-out;transform:translateX(-50%);box-shadow:0 0 8px rgba(255,255,255,.7);z-index:2}.ranking-label-min,.ranking-label-max{position:absolute;top:12px;color:var(--text-medium);font-size:.85em}.ranking-label-min{left:0}.ranking-label-max{right:0}.ranking-context-text{font-size:.95em;background-color:var(--secondary);padding:12px;border-radius:6px;border-left:3px solid var(--accent);line-height:1.5;margin-top:4px}.ranking-context-text strong{color:var(--text-light)}.ranking-podium-list{list-style:none;padding:12px 0 0;margin-top:16px;border-top:1px solid var(--border-color)}.podium-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:.95em}.podium-item .name{display:flex;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%}.podium-item .medal{font-size:1.2em;margin-right:8px}.podium-item .value{font-weight:600}.podium-item.current-campaign{background-color:var(--accent-glow);border-radius:4px;padding:6px 8px;margin:0 -8px;font-weight:600}.podium-item.current-campaign .name{color:var(--accent)}.briefing-content{line-height:1.8}.briefing-content h3{font-size:1.1em;color:var(--accent);margin-top:16px;margin-bottom:8px;font-weight:600}.briefing-content ul{list-style-position:inside;padding-left:10px}.briefing-content li{margin-bottom:8px}#graficos-evolucion-card{padding-bottom:0}.charts-grid-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;padding-top:16px}.chart-container{background:var(--secondary);border-radius:var(--border-radius);padding:16px;position:relative;height:320px}.chart-container canvas{cursor:pointer}#top-ads-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:24px}.ad-card{display:flex;gap:16px;background-color:var(--secondary);border-radius:var(--border-radius);padding:16px;border:1px solid var(--border-color)}.ad-image-container{flex-shrink:0}.ad-image{width:100px;height:100px;object-fit:cover;border-radius:6px;background-color:var(--bg-dark)}.ad-details{flex-grow:1;display:flex;flex-direction:column}.ad-name{font-size:.9em;font-weight:600;color:var(--text-light);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ad-text-preview{font-size:.85em;color:var(--text-medium);margin-bottom:12px;flex-grow:1;line-height:1.5}.ad-metrics{display:flex;justify-content:space-between;font-size:.8em;padding-top:8px;border-top:1px solid var(--border-color)}.ad-metric-item strong{color:var(--text-light);font-size:1.2em}
+
+/* --- 7. MODALES --- */
+#notification-area { position: fixed; top: 20px; right: 20px; z-index: 1000; }
+.notification { padding: 15px 20px; border-radius: 6px; color: white; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid; opacity: 0; transform: translateX(100%); transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+.notification.show { opacity: 1; transform: translateX(0); }
+.notification.error { background-color: rgba(220, 53, 69, 0.1); border-color: var(--danger); color: var(--danger); }
+.notification.success { background-color: rgba(40, 167, 69, 0.1); border-color: var(--success); color: var(--success); }
+
+.modal {
+    display: flex;
+    position: fixed;
+    z-index: 1001;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    /* CIRUGÍA: Añadimos padding para que el modal no toque los bordes de la pantalla */
+    padding: 40px; 
+    overflow: auto;
+    background-color: rgba(0,0,0,0.8);
+    align-items: center; justify-content: center;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.modal.is-visible {
+    visibility: visible;
+    opacity: 1;
+}
+.modal-content {
+    background-color: var(--primary);
+    padding: var(--card-padding);
+    border: 1px solid var(--border-color);
+    width: 100%; /* CIRUGÍA: Lo hacemos 100% del contenedor con padding */
+    max-width: 1200px;
+    border-radius: var(--border-radius);
+    position: relative;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    /* CIRUGÍA: INICIO - Ajuste para scroll interno */
+    max-height: 100%; /* El contenido no puede ser más alto que el contenedor */
+    overflow-y: auto; /* Si lo es, aparece una barra de scroll */
+    /* CIRUGÍA: FIN */
+}
+.modal.is-visible .modal-content {
+    transform: scale(1);
+}
+
+.modal-content.large { max-width: 1000px; } 
+.close-button { color: var(--text-medium); position: absolute; top: 10px; right: 20px; font-size: 35px; font-weight: bold; line-height: 1; z-index: 10; }
+.close-button:hover, .close-button:focus { color: var(--text-light); text-decoration: none; cursor: pointer; }
+#modal-chart-container { flex-grow: 1; position: relative;  height: 70vh; }
+
+/* ... (Estilos de Daterangepicker sin cambios) ... */
+.daterangepicker{background-color:var(--primary)!important;border:1px solid var(--border-color)!important;color:var(--text-light)!important}.daterangepicker .ranges li{color:var(--text-light)!important;border-radius:4px;margin:2px 5px!important;padding:5px 12px!important;transition:background-color .2s}.daterangepicker .ranges li:hover{background-color:var(--accent)!important;color:var(--text-light)!important}.daterangepicker .ranges li.active{background-color:var(--accent)!important;color:var(--text-light)!important;font-weight:600}.daterangepicker .drp-buttons .btn{background-color:var(--secondary)!important;border:1px solid var(--border-color)!important;color:var(--text-light)!important}.daterangepicker .drp-buttons .btn-primary{background-color:var(--accent)!important;border-color:var(--accent)!important}.daterangepicker td,.daterangepicker th,.daterangepicker th.month,.daterangepicker .calendar-table,.daterangepicker .drp-calendar{background:transparent!important;color:var(--text-light)!important}.daterangepicker .off,.daterangepicker .off.in-range,.daterangepicker .off.start-date,.daterangepicker .off.end-date{background-color:transparent!important;color:var(--text-medium)!important;opacity:.4}.daterangepicker td.active,.daterangepicker td.active:hover{background-color:var(--accent)!important;color:var(--text-light)!important}.daterangepicker td.in-range{background-color:var(--accent-glow)!important;color:var(--text-light)!important}.daterangepicker td.available:hover{background-color:var(--border-color)!important}
+.date-tag { margin-left: 16px; font-size: 0.75em; font-weight: 500; color: var(--text-medium); background-color: var(--secondary); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 15px; white-space: nowrap; }
+
+/* --- 8. MODAL DE ANÁLISIS HISTÓRICO (REFINADO) --- */
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+}
+.modal-header h3 {
+    font-size: 1.25em;
+    display: flex;
+    align-items: center;
+}
+.view-loader { 
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 48px;
+    min-height: 400px;
+}
+.period-selector {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+}
+.period-btn {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--secondary);
+    color: var(--text-medium);
+    font-family: var(--font-family);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.period-btn:hover {
+    color: var(--text-light);
+    border-color: var(--accent);
+}
+.period-btn.active {
+    background-color: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    font-weight: 600;
+}
+.comparison-summary-container {
+    padding: 16px 0;
+}
+.comparison-summary-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.comparison-summary-container th,
+.comparison-summary-container td {
+    padding: 14px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+.comparison-summary-container th {
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--text-medium);
+    text-transform: uppercase;
+}
+.comparison-summary-container td {
+    font-size: 1.1em;
+}
+.comparison-summary-container tr:last-child td {
+    border-bottom: none;
+}
+.comparison-summary-container td:first-child {
+    font-weight: 500;
+    color: var(--text-light);
+}
+.comparison-summary-container td:nth-child(2) {
+    font-weight: 700;
+}
+.trend-indicator {
+    font-weight: 600;
+}
+.trend-indicator.positive { color: var(--success); }
+.trend-indicator.negative { color: var(--danger); }
+.trend-indicator.neutral { color: var(--text-medium); }
+.comparison-chart-container {
+    height: 350px; 
+    padding-top: 16px;
+}

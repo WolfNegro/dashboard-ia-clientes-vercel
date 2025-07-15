@@ -11,9 +11,26 @@ def create_app():
     
     app = Flask(__name__)
     
-    # Importamos y registramos las rutas (el blueprint)
-    from .routes import routes as main_blueprint
-    app.register_blueprint(main_blueprint)
-    
+    # Envolvemos las importaciones y el registro en el contexto de la aplicación
+    # para evitar importaciones circulares y asegurar que todo esté disponible.
+    with app.app_context():
+        # Importamos las rutas, que ahora contienen la función de limpieza
+        from . import routes
+        
+        # Registramos el blueprint en la aplicación
+        app.register_blueprint(routes.routes)
+        
+        # ==============================================================================
+        #    CIRUGÍA FINAL: LLAMADA DIRECTA A LA FUNCIÓN DE LIMPIEZA
+        # ==============================================================================
+        # En lugar de usar el obsoleto 'before_first_request', llamamos a la función
+        # directamente aquí. Se ejecutará una sola vez cuando el servidor arranque.
+        
+        routes.limpiar_cache_antiguo()
+
+        # ==============================================================================
+        #    FIN DE LA CIRUGÍA
+        # ==============================================================================
+
     # Devolvemos la aplicación creada
     return app

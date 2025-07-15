@@ -2,12 +2,13 @@
 
 import json
 from collections import defaultdict
+from datetime import datetime, timedelta # CIRUGÍA: Importaciones necesarias para la nueva función
 
 def procesar_metricas_totales(data):
-    """Procesa una lista de insights para obtener un total consolidado y preciso."""
     resultado = defaultdict(float)
     if not data: return dict(resultado)
-    for entry in data:
+    entries = data if isinstance(data, list) else [data]
+    for entry in entries:
         resultado['spend'] += float(entry.get('spend', 0))
         resultado['clicks'] += int(entry.get('clicks', 0))
         resultado['impressions'] += int(entry.get('impressions', 0))
@@ -15,18 +16,14 @@ def procesar_metricas_totales(data):
             for action in entry.get('actions', []):
                 if action.get("action_type") == "onsite_conversion.messaging_conversation_started_7d":
                     resultado['messages'] += float(action.get("value", 0))
-    
     if resultado['impressions'] > 0:
         resultado['ctr'] = (resultado['clicks'] / resultado['impressions']) * 100
         resultado['cpm'] = (resultado['spend'] / resultado['impressions']) * 1000
-        
     if resultado['messages'] > 0:
         resultado['cost_per_message'] = resultado['spend'] / resultado['messages']
-        
     return dict(resultado)
 
 def procesar_metricas_diarias(data):
-    """Procesa una lista de insights diarios para calcular correctamente las métricas de cada día."""
     metricas_por_dia = defaultdict(lambda: defaultdict(float))
     if not data: return {}
     for entry in data:
@@ -48,82 +45,164 @@ def procesar_metricas_diarias(data):
         resultado_final[fecha] = dict(metricas)
     return resultado_final
 
-# FIX: Un único y poderoso prompt para generar TODO en una sola llamada.
+def calcular_comparativa(metricas_hoy, metricas_ayer):
+    comparativa = {}
+    for metrica in ['spend', 'messages', 'cost_per_message']:
+        valor_hoy = metricas_hoy.get(metrica, 0)
+        valor_ayer = metricas_ayer.get(metrica, 0)
+        if valor_ayer > 0:
+            diferencia = ((valor_hoy - valor_ayer) / valor_ayer) * 100
+            comparativa[metrica] = diferencia
+        elif valor_hoy > 0:
+            comparativa[metrica] = 100.0
+        else:
+            comparativa[metrica] = 0.0
+    return comparativa
+
+def procesar_datos_ranking(lista_campanas_procesadas, campana_seleccionada_id):
+    if not lista_campanas_procesadas: return {}
+    metricas_procesadas = lista_campanas_procesadas
+    ranking_resultados = sorted(metricas_procesadas, key=lambda x: x['results'], reverse=True)
+    ranking_cpr = sorted(metricas_procesadas, key=lambda x: x['cost_per_result'])
+    posicion_resultados = next((i + 1 for i, c in enumerate(ranking_resultados) if c['id'] == campana_seleccionada_id), -1)
+    posicion_cpr = next((i + 1 for i, c in enumerate(ranking_cpr) if c['id'] == campana_seleccionada_id), -1)
+    lista_resultados = [c['results'] for c in metricas_procesadas]
+    lista_cpr = [c['cost_per_result'] for c in metricas_procesadas if c['cost_per_result'] != float('inf')]
+    return {
+        'total_campaigns': len(metricas_procesadas),
+        'results': { 'rank': posicion_resultados, 'min': min(lista_resultados) if lista_resultados else 0, 'max': max(lista_resultados) if lista_resultados else 0, 'value': next((c['results'] for c in metricas_procesadas if c['id'] == campana_seleccionada_id), 0) },
+        'cost_per_result': { 'rank': posicion_cpr, 'min': min(lista_cpr) if lista_cpr else 0, 'max': max(lista_cpr) if lista_cpr else 0, 'value': next((c['cost_per_result'] for c in metricas_procesadas if c['id'] == campana_seleccionada_id), 0) }
+    }
+
+# === FUNCIÓN FINAL PARA EL BRIEFING EXPRESS ===
 def generar_prompt_completo(metricas_totales, metricas_diarias, top_anuncios, descripcion_negocio, currency_symbol, date_range):
-    
-    # --- Preparación de datos para el prompt ---
-    gasto_total = f"{currency_symbol}{metricas_totales.get('spend', 0):.2f}"
+    """
+    Genera un prompt para la IA optimizado para el formato "Briefing Express".
+    """
+    # --- 1. Preparación de Datos ---
     resultados_totales = int(metricas_totales.get('messages', 0))
-    cpr_total = f"{currency_symbol}{metricas_totales.get('cost_per_message', 0):.2f}"
+    cpr_promedio = metricas_totales.get('cost_per_message', 0)
     
-    mejor_dia_info = "No hay datos diarios para analizar tendencias."
+    mejor_anuncio_nombre = "N/A"
+    mejor_anuncio_cpr = 0
+    porcentaje_mejora_cpr = 0
+
+    if top_anuncios:
+        mejor_anuncio = top_anuncios[0]
+        mejor_anuncio_nombre = mejor_anuncio.get('nombre_anuncio', 'Anuncio Top')
+        mejor_anuncio_cpr = mejor_anuncio['metricas'].get('cost_per_message', 0)
+        if cpr_promedio > 0 and mejor_anuncio_cpr > 0:
+            porcentaje_mejora_cpr = (1 - (mejor_anuncio_cpr / cpr_promedio)) * 100
+
+    pico_diario_info = "No hubo un pico claro."
     if metricas_diarias:
         mejor_dia_data = max(metricas_diarias.values(), key=lambda x: x.get('messages', 0), default=None)
-        if mejor_dia_data:
+        if mejor_dia_data and mejor_dia_data.get('messages', 0) > 0:
             fecha_mejor_dia = next((k for k, v in metricas_diarias.items() if v == mejor_dia_data), "N/A")
-            mejor_dia_info = f"El día de mayor rendimiento fue el {fecha_mejor_dia}, con {int(mejor_dia_data.get('messages', 0))} mensajes."
+            pico_diario_info = f"Pico: {int(mejor_dia_data.get('messages', 0))} mensajes el {fecha_mejor_dia}"
 
-    # Preparamos los datos de los anuncios para que la IA los analice
-    seccion_anuncios_para_analizar = ""
-    for i, ad in enumerate(top_anuncios):
-        ad_id = ad.get('id', 'N/A')
-        ad_texto = ad.get('texto_original', 'Sin texto disponible.')
-        ad_cpr = f"{currency_symbol}{ad['metricas'].get('cost_per_message', 0):.2f}"
-        seccion_anuncios_para_analizar += f"""
----
-**Anuncio {i+1} (ID: {ad_id})**
-- **Costo por Resultado (CPR):** {ad_cpr}
-- **Texto a Analizar:** "{ad_texto}"
-"""
-
-    # --- El Prompt Unificado ---
+    # --- 2. Construcción del Prompt ---
     prompt = f"""
-Actúa como un analista senior de datos y estratega de marketing digital. Tu tarea es generar un informe completo en dos partes, basándote en los datos proporcionados. Tu respuesta debe estar en español.
+Genera un "Briefing Express" para un dashboard de {descripcion_negocio}.
+Debe ser breve, claro y visual, pensado para que un dueño de negocio no técnico lo entienda rápido.
+Usa los emojis proporcionados en la estructura.
+Mantén un tono profesional, breve y accionable.
 
-**PARTE 1: BRIEFING ESTRATÉGICO**
+**DATOS DE ENTRADA:**
+- Resultados totales: {resultados_totales}
+- CPR Promedio: {currency_symbol}{cpr_promedio:.2f}
+- Mejor anuncio: '{mejor_anuncio_nombre}'
+- CPR del mejor anuncio: {currency_symbol}{mejor_anuncio_cpr:.2f}
+- Dato del pico diario: {pico_diario_info}
+- Porcentaje de mejora del mejor anuncio vs promedio: {porcentaje_mejora_cpr:.0f}%
 
-**Datos de la Campaña:**
-- **Periodo:** {date_range}
-- **Negocio:** {descripcion_negocio}
-- **Métricas Generales:** Inversión: {gasto_total}, Mensajes: {resultados_totales}, CPR Promedio: {cpr_total}.
-- **Insight Diario:** {mejor_dia_info}
+**INSTRUCCIONES:**
+Usa los datos de entrada para rellenar EXACTAMENTE la siguiente plantilla Markdown. No añadas nada más.
 
-**Instrucciones para el Briefing:**
-Crea un briefing ejecutivo usando EXACTAMENTE la siguiente estructura Markdown. Sé directo y accionable.
+### ⚡ Briefing Express
+- ✅ {resultados_totales} resultados | CPR {currency_symbol}{cpr_promedio:.2f}
+- 🔥 '{mejor_anuncio_nombre}' destaca (CPR {currency_symbol}{mejor_anuncio_cpr:.2f})
+- 📈 {pico_diario_info}
+- 👉 **Acciones:** duplicar anuncio, escalar en picos y test A/B
 
-### 🚀 Resumen Ejecutivo
-(1-2 frases resumiendo el rendimiento general).
+### 🧠 Insight Clave:
+(Usa el "porcentaje de mejora" para generar una frase. Ejemplo: "Tu mejor anuncio rinde un {porcentaje_mejora_cpr:.0f}% más barato que el promedio, generando mayor volumen a menor costo.")
 
-### 📊 Análisis Rápido
-- **Rendimiento General:** (Comenta si el CPR es bueno/malo).
-- **Tendencia Clave:** (Explica el insight del 'día de mayor rendimiento').
-- **Creatividades que Funcionan:** (Menciona cuál de los anuncios a continuación es más eficiente basándote en su CPR).
-
-### 📌 Plan de Acción Estratégico
-- **Optimizar:** (UNA recomendación para mejorar).
-- **Escalar:** (UNA recomendación para crecer).
-- **Testear:** (UNA recomendación de prueba A/B).
-
----|||SEPARADOR|||---
-
-**PARTE 2: ANÁLISIS DE COPY DE ANUNCIOS**
-
-**Datos de los Anuncios:**
-{seccion_anuncios_para_analizar}
-
-**Instrucciones para el Análisis de Anuncios:**
-Para cada anuncio, genera un análisis de su texto usando EXACTAMENTE el siguiente formato. Debes iniciar cada bloque con `|||AD_ANALYSIS_{{ID_DEL_ANUNCIO}}|||`.
-
-|||AD_ANALYSIS_{{ID_DEL_ANUNCIO_1}}|||
-✅ **Fuerte:** (1 frase sobre lo mejor del texto del Anuncio 1).
-⚠️ **A Mejorar:** (1 frase sobre lo más débil del texto del Anuncio 1).
-💡 **Test A/B:** (1 idea de prueba para el texto del Anuncio 1).
-
-|||AD_ANALYSIS_{{ID_DEL_ANUNCIO_2}}|||
-✅ **Fuerte:** (Análisis del Anuncio 2).
-⚠️ **A Mejorar:** (Análisis del Anuncio 2).
-💡 **Test A/B:** (Análisis del Anuncio 2).
-
-(Continúa para todos los anuncios proporcionados)
+### ✅ Recomendación Directa:
+(Genera UNA frase de acción concreta. Ejemplo: "Invierte más en días pico y prueba 2-3 variantes del anuncio top para mantener el CPR bajo.")
 """
     return prompt.strip()
+
+# ==============================================================================
+#           CIRUGÍA: INICIO DE LA NUEVA FUNCIÓN DE PROCESAMIENTO
+# ==============================================================================
+def procesar_datos_comparativos_historicos(raw_data):
+    """
+    Procesa la lista de insights diarios de los últimos 60 días y la estructura
+    para la vista expandida del frontend.
+    """
+    if not raw_data:
+        return {}
+
+    # Reutilizamos la función existente para tener un diccionario limpio de métricas por día.
+    daily_metrics = procesar_metricas_diarias(raw_data)
+    
+    # Helper interno para calcular totales y series para un conjunto de fechas.
+    def _calculate_period_summary(dates_to_process, all_daily_metrics):
+        total_spend = 0
+        total_leads = 0
+        chart_data = {'labels': [], 'leads': [], 'cpr': [], 'spend': []}
+
+        for date_str in sorted(dates_to_process):
+            day_data = all_daily_metrics.get(date_str, {})
+            day_spend = day_data.get('spend', 0)
+            day_leads = day_data.get('messages', 0)
+            day_cpr = day_data.get('cost_per_message', 0)
+
+            total_spend += day_spend
+            total_leads += day_leads
+
+            chart_data['labels'].append(datetime.strptime(date_str, '%Y-%m-%d').strftime('%d %b'))
+            chart_data['leads'].append(int(day_leads))
+            chart_data['spend'].append(day_spend)
+            chart_data['cpr'].append(day_cpr)
+
+        total_cpr = (total_spend / total_leads) if total_leads > 0 else 0
+        
+        return {'summary': {'leads': total_leads, 'cpr': total_cpr, 'spend': total_spend}, 'chart_data': chart_data}
+
+    # Helper interno para calcular el porcentaje de tendencia.
+    def _calculate_trend(current, previous):
+        if previous > 0: return ((current - previous) / previous) * 100
+        if current > 0: return 100.0
+        return 0.0
+
+    today = datetime.now()
+    final_result = {}
+    
+    for period_days in [3, 7, 30]:
+        # Definimos los rangos de fechas para el período actual y el anterior.
+        current_period_dates = [(today - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(period_days)]
+        previous_period_dates = [(today - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(period_days, period_days * 2)]
+        
+        # Obtenemos los datos para esos días.
+        current_data = _calculate_period_summary(current_period_dates, daily_metrics)
+        previous_data = _calculate_period_summary(previous_period_dates, daily_metrics)
+        
+        current_summary = current_data['summary']
+        previous_summary = previous_data['summary']
+        
+        # Combinamos los valores y las tendencias en la estructura final.
+        final_result[f'period_{period_days}'] = {
+            'summary': {
+                'leads': {'value': int(current_summary['leads']), 'trend': _calculate_trend(current_summary['leads'], previous_summary['leads'])},
+                'cpr': {'value': current_summary['cpr'], 'trend': _calculate_trend(current_summary['cpr'], previous_summary['cpr'])},
+                'spend': {'value': current_summary['spend'], 'trend': _calculate_trend(current_summary['spend'], previous_summary['spend'])}
+            },
+            'chart_data': current_data['chart_data']
+        }
+        
+    return final_result
+# ==============================================================================
+#            CIRUGÍA: FIN DE LA NUEVA FUNCIÓN DE PROCESAMIENTO
+# ==============================================================================

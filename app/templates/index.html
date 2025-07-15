@@ -14,15 +14,14 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
-    <script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
 </head>
 <body>
     <div id="loader"><div class="spinner"></div></div>
 
     <div id="app-content" style="display: none;">
         <h1><i class="fa-solid fa-brain"></i> Centro de Comando IA</h1>
-        
         <div id="notification-area"></div>
         <div class="control-panel">
             <select id="cuenta-select" disabled><option>Cargando...</option></select>
@@ -36,62 +35,140 @@
         <div id="dashboard-container" style="display: none;">
             <div class="dashboard-grid-main">
 
-                <!-- MÉTRICAS -->
                 <div class="card" id="metricas-card">
                     <h2><i class="fa-solid fa-chart-pie"></i> Métricas Principales</h2>
                     <div id="metricas-grid-container"></div>
                 </div>
 
-                <!-- BRIEFING IA -->
+                <div class="card" id="metricas-hoy-ayer-card">
+                    <div class="metricas-comparativa-container">
+                        <div class="metrica-diaria-box"><h3>Hoy</h3><div id="metricas-hoy-grid-container"></div></div>
+                        <div class="metrica-diaria-box"><h3>Ayer</h3><div id="metricas-ayer-grid-container"></div></div>
+                    </div>
+                    
+                    <!-- ============================================================================== -->
+                    <!--     CIRUGÍA: INICIO - Añadimos el texto de llamada a la acción                 -->
+                    <!-- ============================================================================== -->
+                    <div class="card-hover-prompt">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        <span>Clic para análisis detallado</span>
+                    </div>
+                    <!-- ============================================================================== -->
+                    <!--     CIRUGÍA: FIN                                                             -->
+                    <!-- ============================================================================== -->
+
+                </div>
+
+                <div class="card" id="ranking-card">
+                    <h2><i class="fa-solid fa-ranking-star"></i> Clasificación de Rendimiento</h2>
+                    <div id="ranking-container">
+                        <div class="ranking-widget">
+                            <div class="ranking-header">
+                                <span class="ranking-title">Clasificación por Resultados</span>
+                                <span class="ranking-position" id="ranking-results-pos">-- de --</span>
+                            </div>
+                            <div class="ranking-bar-container">
+                                <div class="ranking-bar gradient-results">
+                                    <div id="ranking-results-marker" class="ranking-marker"></div>
+                                </div>
+                                <span class="ranking-label-min" id="ranking-results-min">0</span>
+                                <span class="ranking-label-max" id="ranking-results-max">0</span>
+                            </div>
+                            <div class="ranking-context-text" id="ranking-results-context">Seleccione una campaña para ver su clasificación.</div>
+                            <ul class="ranking-podium-list" id="ranking-results-podium"></ul>
+                        </div>
+                        <div class="ranking-widget">
+                            <div class="ranking-header">
+                                <span class="ranking-title">Clasificación por Costo/Resultado</span>
+                                <span class="ranking-position" id="ranking-cpr-pos">-- de --</span>
+                            </div>
+                            <div class="ranking-bar-container">
+                                <div class="ranking-bar gradient-cpr">
+                                    <div id="ranking-cpr-marker" class="ranking-marker"></div>
+                                </div>
+                                <span class="ranking-label-min" id="ranking-cpr-min">S/0</span>
+                                <span class="ranking-label-max" id="ranking-cpr-max">S/0</span>
+                            </div>
+                            <div class="ranking-context-text" id="ranking-cpr-context">Seleccione una campaña para ver su clasificación.</div>
+                            <ul class="ranking-podium-list" id="ranking-cpr-podium"></ul>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="card" id="briefing-card">
                     <h2><i class="fa-solid fa-lightbulb"></i> Briefing Estratégico</h2>
                     <div id="briefing-content" class="briefing-content"></div>
                 </div>
 
-                <!-- GRÁFICOS -->
                 <div class="card" id="graficos-evolucion-card">
                     <h2><i class="fa-solid fa-chart-line"></i> Evolución de la Campaña</h2>
                     <div class="charts-grid-container">
-                        <div class="chart-container">
-                            <div class="chart-wrapper"><canvas id="grafico-resultados"></canvas></div>
-                        </div>
-                        <div class="chart-container">
-                            <div class="chart-wrapper"><canvas id="grafico-cpr"></canvas></div>
-                        </div>
-                        <div class="chart-container">
-                            <div class="chart-wrapper"><canvas id="grafico-gasto"></canvas></div>
-                        </div>
+                        <div class="chart-container"><canvas id="grafico-resultados"></canvas></div>
+                        <div class="chart-container"><canvas id="grafico-cpr"></canvas></div>
+                        <div class="chart-container"><canvas id="grafico-gasto"></canvas></div>
                     </div>
                 </div>
 
-                <!-- TOP ADS -->
                 <div class="card" id="top-anuncios-card">
-                    <h2><i class="fa-solid fa-trophy"></i> Top 4 Anuncios de la Campaña</h2>
-                    <div id="top-ads-grid" class="top-ads-grid"></div>
+                    <h2><i class="fa-solid fa-trophy"></i> Top Anuncios con Mejor CPR</h2>
+                    <div id="top-ads-container"></div>
                 </div>
 
-            </div> <!-- /.dashboard-grid-main -->
-        </div>
-    </div>
-
-    <!-- ======================================================= -->
-    <!--         INICIO: CÓDIGO PARA LA VENTANA MODAL            -->
-    <!-- ======================================================= -->
-    <div id="chart-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">×</span>
-            <div id="modal-chart-container">
-                <canvas id="modal-chart-canvas"></canvas>
             </div>
         </div>
     </div>
-    <!-- ======================================================= -->
-    <!--          FIN: CÓDIGO PARA LA VENTANA MODAL              -->
-    <!-- ======================================================= -->
 
-    <script>
-        const CUENTAS = {{ cuentas | tojson | safe }};
-        const ERROR_MESSAGE = {{ error_message | tojson | safe }};
-    </script>
+    <!-- ============================================================================== -->
+    <!--                       ESTRUCTURA DE MODALES                                    -->
+    <!-- ============================================================================== -->
+    
+    <div id="chart-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">×</span>
+            <div id="modal-chart-container"><canvas id="modal-chart-canvas"></canvas></div>
+        </div>
+    </div>
+    
+    <div id="historical-analysis-modal" class="modal">
+        <div class="modal-content large">
+            <span class="close-button">×</span>
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Análisis Histórico de Tendencias</h3>
+            </div>
+            
+            <div id="historical-view-loader" class="view-loader">
+                <div class="spinner"></div>
+            </div>
+
+            <div id="historical-view-content" style="display: none;">
+                <div class="period-selector">
+                    <button class="period-btn" data-period="3">Últimos 3 días</button>
+                    <button class="period-btn" data-period="7">Últimos 7 días</button>
+                    <button class="period-btn" data-period="30">Últimos 30 días</button>
+                </div>
+
+                <div class="comparison-summary-container">
+                    <h4 id="historical-trend-header">Tendencia</h4>
+                                       <table>
+                        <thead>
+                            <tr>
+                                <th>Métrica Clave</th>
+                                <th>Total (Período)</th>
+                                <th>Tendencia</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison-summary-tbody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="comparison-chart-container">
+                    <canvas id="historical-chart-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script> const CUENTAS = {{ cuentas | tojson | safe }}; const ERROR_MESSAGE = {{ error_message | tojson | safe }}; </script>
 </body>
 </html>
