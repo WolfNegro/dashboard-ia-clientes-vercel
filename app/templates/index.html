@@ -27,8 +27,6 @@
             <select id="cuenta-select" disabled><option>Cargando...</option></select>
             <select id="campana-select" disabled><option>Seleccione cuenta</option></select>
             <input type="text" id="fecha" placeholder="Seleccione un rango de fechas">
-            <input type="text" id="descripcion-negocio" placeholder="Descripción breve del negocio">
-            <input type="text" id="ubicacion-pais" placeholder="País (ej: 'Perú')">
             <button id="analizar-btn" disabled>Analizar Campaña</button>
         </div>
 
@@ -45,7 +43,7 @@
                         <div class="metrica-diaria-box"><h3>Hoy</h3><div id="metricas-hoy-grid-container"></div></div>
                         <div class="metrica-diaria-box"><h3>Ayer</h3><div id="metricas-ayer-grid-container"></div></div>
                     </div>
-                    
+                     
                     <!-- ============================================================================== -->
                     <!--     CIRUGÍA: INICIO - Añadimos el texto de llamada a la acción                 -->
                     <!-- ============================================================================== -->
@@ -94,7 +92,7 @@
                         </div>
                     </div>
                 </div>
-                
+                 
                 <div class="card" id="briefing-card">
                     <h2><i class="fa-solid fa-lightbulb"></i> Briefing Estratégico</h2>
                     <div id="briefing-content" class="briefing-content"></div>
@@ -121,21 +119,21 @@
     <!-- ============================================================================== -->
     <!--                       ESTRUCTURA DE MODALES                                    -->
     <!-- ============================================================================== -->
-    
+     
     <div id="chart-modal" class="modal">
         <div class="modal-content">
             <span class="close-button">×</span>
             <div id="modal-chart-container"><canvas id="modal-chart-canvas"></canvas></div>
         </div>
     </div>
-    
+     
     <div id="historical-analysis-modal" class="modal">
         <div class="modal-content large">
             <span class="close-button">×</span>
             <div class="modal-header">
                 <h3><i class="fa-solid fa-clock-rotate-left"></i> Análisis Histórico de Tendencias</h3>
             </div>
-            
+             
             <div id="historical-view-loader" class="view-loader">
                 <div class="spinner"></div>
             </div>

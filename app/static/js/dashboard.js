@@ -1,15 +1,3 @@
-/**
- * =================================================================================
- *    DASHBOARD.JS - VERSIÓN FINAL (33.0 - ELIMINACIÓN DE ERROR DE ALTURA)
- * =================================================================================
- * La solución final se aplica en CSS dando una altura explícita al contenedor
- * del modal (#modal-chart-container). Este JS es la versión más limpia y robusta,
- * asegurando que la escala del eje Y es automática y los datos se pasan
- * correctamente.
- * =================================================================================
- */
-
-// --- ESTADO GLOBAL ---
 let chartInstances = {};
 let modalChartInstance = null;
 let selectedDateRangeLabel = "Personalizado";
@@ -76,7 +64,7 @@ function setupDatePicker() {
         selectedDateRangeLabel = label;
         validateForm();
     });
-     
+       
     selectedDateRangeLabel = "Últimos 30 Días";
     validateForm();
 }
@@ -92,12 +80,10 @@ function addEventListeners() {
         validateForm();
     });
 
-    ['campana-select', 'descripcion-negocio', 'ubicacion-pais', 'fecha'].forEach(id => {
+    ['campana-select', 'fecha'].forEach(id => {
         const element = document.getElementById(id);
         if (element) {
-            const eventType = (id === 'descripcion-negocio' || id === 'ubicacion-pais') ? 'keyup' : 'change';
-            element.addEventListener(eventType, validateForm);
-            if (eventType === 'change') element.addEventListener('change', validateForm);
+            element.addEventListener('change', validateForm);
         }
     });
 
@@ -105,7 +91,7 @@ function addEventListeners() {
     document.getElementById('metricas-hoy-ayer-card')?.addEventListener('click', openHistoricalModal);
     document.querySelector('#chart-modal .close-button')?.addEventListener('click', closeChartModal);
     document.querySelector('#historical-analysis-modal .close-button')?.addEventListener('click', closeHistoricalModal);
-     
+       
     document.querySelectorAll('#historical-analysis-modal .period-btn').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -128,14 +114,14 @@ function addEventListeners() {
 function validateForm() {
     const btn = document.getElementById('analizar-btn');
     if(!btn) return;
-    btn.disabled = !(document.getElementById('cuenta-select').value && document.getElementById('campana-select').value && document.getElementById('fecha').value && document.getElementById('descripcion-negocio').value && document.getElementById('ubicacion-pais').value);
+    btn.disabled = !(document.getElementById('cuenta-select').value && document.getElementById('campana-select').value && document.getElementById('fecha').value);
 }
 
 function cargarCampanas(accountId) {
     const c = document.getElementById('campana-select');
     c.disabled = true;
     c.innerHTML = '\<option\>Cargando campañas...\</option\>';
-     
+       
     fetch(`/get_campaigns/${accountId}`)
     .then(response => {
         if (!response.ok) throw new Error('Error del servidor.');
@@ -163,18 +149,16 @@ async function analizarCampana() {
     const btn = document.getElementById('analizar-btn');
     const loader = document.getElementById('loader');
     const dashboard = document.getElementById('dashboard-container');
-     
+       
     btn.disabled = true;
     btn.innerHTML = '\<i class="fa-solid fa-spinner fa-spin"\>\</i\> Analizando...';
     loader.style.display = 'flex';
     dashboard.style.display = 'none';
-     
+       
     const payload = {
         cuenta_id: document.getElementById('cuenta-select').value,
         campaign_id: document.getElementById('campana-select').value,
-        date_range: document.getElementById('fecha').value,
-        descripcion_negocio: document.getElementById('descripcion-negocio').value,
-        pais: document.getElementById('ubicacion-pais').value
+        date_range: document.getElementById('fecha').value
     };
 
     try {
@@ -185,10 +169,10 @@ async function analizarCampana() {
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Error desconocido del servidor.');
-         
+           
         result.date_range_label = selectedDateRangeLabel;
         result.date_range_value = payload.date_range;
-         
+           
         renderDashboard(result);
         dashboard.style.display = 'block';
         showNotification('Análisis completado con éxito.', 'success');
@@ -281,7 +265,7 @@ function renderizarRanking(data, moneda, currentCampaignId) {
         document.getElementById('ranking-results-context').innerHTML = data.total_campaigns > 1 ? (res.rank === 1 ? `🏆 \<strong\>¡Felicidades!\</strong\> Eres el #1 en resultados.` : `Tu valor: \<strong\>${res.value.toLocaleString()}\</strong\>.`) : `📈 Con una sola campaña, tu valor es \<strong\>${res.value.toLocaleString()}\</strong\>.`;
         document.getElementById('ranking-results-podium').innerHTML = crearPodiumHTML(data.campaign_details, 'results', val => val.toLocaleString(), true);
     }
-     
+       
     const cpr = data.cost_per_result;
     if (cpr) {
         document.getElementById('ranking-cpr-pos').textContent = `${cpr.rank || '--'} de ${data.total_campaigns}`;
@@ -368,7 +352,7 @@ function renderGraficos(dailyData, currency) {
         chartDataStore[canvasId] = { type, title, currency, labels, dataset };
 
         if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
-        
+         
         chartInstances[canvasId] = new Chart(ctx, {
             type: type,
             data: { labels: labels, datasets: [dataset] },
@@ -386,21 +370,21 @@ function renderGraficos(dailyData, currency) {
 function openModalWithChart(canvasId) {
     const modal = document.getElementById('chart-modal');
     if (!modal) return;
-    
+     
     const storedData = chartDataStore[canvasId];
     if (!storedData) return;
 
     modal.classList.add('is-visible');
-    
+     
     setTimeout(() => {
         if (modalChartInstance) modalChartInstance.destroy();
-        
+         
         const canvas = document.getElementById('modal-chart-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        
+         
         const dataForModal = JSON.parse(JSON.stringify(storedData));
-        
+         
         // CORRECCIÓN ESENCIAL: Si es un gráfico de área, el degradado debe
         // ser recreado para el NUEVO canvas del modal. No se puede copiar.
         if (dataForModal.type === 'line' && dataForModal.dataset.fill === true) {
@@ -424,7 +408,7 @@ function openModalWithChart(canvasId) {
 function closeChartModal() {
     const modal = document.getElementById('chart-modal');
     if(modal) modal.classList.remove('is-visible');
-    
+     
     if (modalChartInstance) {
         modalChartInstance.destroy();
         modalChartInstance = null;
@@ -459,11 +443,11 @@ async function openHistoricalModal() {
             const errData = await response.json();
             throw new Error(errData.error || 'Error al cargar datos comparativos.');
         }
-         
+           
         historicalDataStore = await response.json();
         loader.style.display = 'none';
         content.style.display = 'block';
-         
+           
         document.querySelector('#historical-analysis-modal .period-btn.active')?.classList.remove('active');
         document.querySelector(`#historical-analysis-modal .period-btn[data-period='30']`)?.classList.add('active');
         renderHistoricalData(30);
@@ -494,10 +478,10 @@ function renderHistoricalData(period) {
         showNotification('No hay datos disponibles para este período.', 'warning');
         return;
     };
-     
+       
     const header = document.getElementById('historical-trend-header');
     if(header) header.textContent = `Tendencia (vs. los ${period} días anteriores)`;
-     
+       
     renderHistoricalSummaryTable(periodData.summary, historicalDataStore.moneda);
     renderHistoricalChart(periodData.chart_data, historicalDataStore.moneda);
 }
@@ -528,7 +512,7 @@ function renderHistoricalChart(chartData, moneda) {
     if(!ctx) return;
 
     if (historicalChartInstance) historicalChartInstance.destroy();
-     
+       
     historicalChartInstance = new Chart(ctx, {
         type: 'line',
         data: {

@@ -75,14 +75,14 @@ def procesar_datos_ranking(lista_campanas_procesadas, campana_seleccionada_id):
     }
 
 # === FUNCIÓN FINAL PARA EL BRIEFING EXPRESS ===
-def generar_prompt_completo(metricas_totales, metricas_diarias, top_anuncios, descripcion_negocio, currency_symbol, date_range):
+def generar_prompt_completo(metricas_totales, metricas_diarias, top_anuncios, currency_symbol, date_range):
     """
     Genera un prompt para la IA optimizado para el formato "Briefing Express".
     """
     # --- 1. Preparación de Datos ---
     resultados_totales = int(metricas_totales.get('messages', 0))
     cpr_promedio = metricas_totales.get('cost_per_message', 0)
-    
+     
     mejor_anuncio_nombre = "N/A"
     mejor_anuncio_cpr = 0
     porcentaje_mejora_cpr = 0
@@ -103,7 +103,7 @@ def generar_prompt_completo(metricas_totales, metricas_diarias, top_anuncios, de
 
     # --- 2. Construcción del Prompt ---
     prompt = f"""
-Genera un "Briefing Express" para un dashboard de {descripcion_negocio}.
+Genera un "Briefing Express" para un dashboard de análisis de campañas.
 Debe ser breve, claro y visual, pensado para que un dueño de negocio no técnico lo entienda rápido.
 Usa los emojis proporcionados en la estructura.
 Mantén un tono profesional, breve y accionable.
@@ -146,7 +146,7 @@ def procesar_datos_comparativos_historicos(raw_data):
 
     # Reutilizamos la función existente para tener un diccionario limpio de métricas por día.
     daily_metrics = procesar_metricas_diarias(raw_data)
-    
+     
     # Helper interno para calcular totales y series para un conjunto de fechas.
     def _calculate_period_summary(dates_to_process, all_daily_metrics):
         total_spend = 0
@@ -168,7 +168,7 @@ def procesar_datos_comparativos_historicos(raw_data):
             chart_data['cpr'].append(day_cpr)
 
         total_cpr = (total_spend / total_leads) if total_leads > 0 else 0
-        
+         
         return {'summary': {'leads': total_leads, 'cpr': total_cpr, 'spend': total_spend}, 'chart_data': chart_data}
 
     # Helper interno para calcular el porcentaje de tendencia.
@@ -179,19 +179,19 @@ def procesar_datos_comparativos_historicos(raw_data):
 
     today = datetime.now()
     final_result = {}
-    
+     
     for period_days in [3, 7, 30]:
         # Definimos los rangos de fechas para el período actual y el anterior.
         current_period_dates = [(today - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(period_days)]
         previous_period_dates = [(today - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(period_days, period_days * 2)]
-        
+         
         # Obtenemos los datos para esos días.
         current_data = _calculate_period_summary(current_period_dates, daily_metrics)
         previous_data = _calculate_period_summary(previous_period_dates, daily_metrics)
-        
+         
         current_summary = current_data['summary']
         previous_summary = previous_data['summary']
-        
+         
         # Combinamos los valores y las tendencias en la estructura final.
         final_result[f'period_{period_days}'] = {
             'summary': {
@@ -201,7 +201,7 @@ def procesar_datos_comparativos_historicos(raw_data):
             },
             'chart_data': current_data['chart_data']
         }
-        
+         
     return final_result
 # ==============================================================================
 #            CIRUGÍA: FIN DE LA NUEVA FUNCIÓN DE PROCESAMIENTO
