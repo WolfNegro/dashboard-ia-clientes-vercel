@@ -1,18 +1,10 @@
-# Entorno virtual
-venv/
-
-# Archivos de caché de Python
-__pycache__/
-*.pyc
-
-# Archivo de variables de entorno
 .env
-
-# Archivos del sistema operativo
-.DS_Store.env
 venv/
 __pycache__/
 *.pyc
 cache_raw/
 .DS_Store
 .idea/
+*.log
+node_modules/
+.vercel/
