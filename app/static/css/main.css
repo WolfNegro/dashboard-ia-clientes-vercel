@@ -1,55 +1,298 @@
-/* static/css/main.css */
+/* app/static/css/main.css */
+
+/* ====== Tema oscuro consistente ====== */
 :root{
-  --bg:#0b0d10; --panel:#11151a; --muted:#6b7280; --text:#e5e7eb; --accent:#ff3b5c; --line:#1f242b;
-  --success:#10b981; --warn:#f59e0b;
+  --bg:#0b1220;          /* fondo azul marino */
+  --panel:#0f172a;       /* panel oscuro */
+  --panel-2:#111827;
+  --border:rgba(255,255,255,.08);
+  --text:#e5e7eb;        /* texto principal */
+  --muted:#94a3b8;       /* texto tenue */
+  --accent:#3b82f6;      /* azul primario */
+  --accent-2:#60a5fa;    /* azul claro */
 }
-*{box-sizing:border-box}
-html,body{height:100%}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
 body{
-  margin:0; background:var(--bg); color:var(--text); font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
 }
-.topbar{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:14px 22px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,#0c1015,#0a0d10);
-  position:sticky; top:0; z-index:10;
+
+/* Contenedor base (páginas) */
+.container{ max-width:1240px; margin: 24px auto 80px; padding: 0 16px; }
+
+/* ====== Top / header ====== */
+.page-header{ position:sticky; top:0; z-index:20; padding:8px 0 12px; backdrop-filter: blur(6px); }
+.topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+
+/* ====== Tipografía ====== */
+h1,h2,h3,h4,strong{ color:var(--text); }
+h1{ font-size:2rem; font-weight:800; margin:0; }
+h2,h3{ font-weight:800; margin:0 0 8px; }
+.section{ margin-top:22px; }
+.section-title{ margin:10px 0 6px; color:var(--text); }
+
+/* Asegurar contraste en enlaces dentro de tarjetas */
+a{ color:var(--accent-2); text-decoration:none; }
+a:hover{ color:#fff; }
+
+/* ====== Botones ====== */
+.btn, .btn-primary, a.btn{
+  display:inline-block;
+  padding:10px 14px;
+  border-radius:12px;
+  border:1px solid rgba(96,165,250,.35);
+  background: linear-gradient(180deg, rgba(59,130,246,.22), rgba(59,130,246,.16));
+  color:#fff; font-weight:700; text-decoration:none;
+  transition: .15s ease;
 }
-.brand{display:flex; align-items:center; gap:10px}
-.dot{width:12px; height:12px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent)}
-.brand-title{letter-spacing:.5px; font-weight:600; color:#bfc8d6}
-.client-name{font-size:18px; font-weight:700}
-.container{max-width:1200px; margin:18px auto; padding:0 16px}
-.section-title{margin:12px 0 10px 4px; font-size:18px}
-.kpi-row{display:grid; gap:12px; grid-template-columns:repeat(5,minmax(0,1fr)); margin-bottom:18px}
-.kpi{background:var(--panel); padding:14px 16px; border:1px solid var(--line); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.2)}
-.kpi-label{color:var(--muted); font-size:12px}
-.kpi-value{margin-top:6px; font-size:22px; font-weight:800}
-.kpi-sub{color:var(--muted); font-size:12px; margin-top:2px}
-.grid{display:grid; gap:14px; grid-template-columns:repeat(3,minmax(0,1fr))}
+.btn:hover{ filter:brightness(1.05); transform: translateY(-1px); }
+.btn:active{ transform: translateY(0); }
+
+[data-preset].active,
+.btn-primary{
+  background: linear-gradient(180deg, rgba(59,130,246,.45), rgba(59,130,246,.28));
+  border-color: rgba(96,165,250,.55);
+}
+
+/* ---- Botones de rango pro (cubre varias clases) ---- */
+.range-buttons{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.range-buttons .btn-range,
+.filters button,
+.date-range button,
+.btn-chip{
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: #e5edff;
+  padding: .55rem .9rem;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .06s ease;
+  backdrop-filter: blur(2px);
+}
+.range-buttons .btn-range:hover,
+.filters button:hover,
+.date-range button:hover,
+.btn-chip:hover{
+  background: rgba(86,120,255,.20);
+  border-color: rgba(120,150,255,.55);
+}
+.range-buttons .btn-range:active,
+.filters button:active,
+.date-range button:active,
+.btn-chip:active{ transform: translateY(1px); }
+
+/* ACTIVO: .active o aria-pressed="true" */
+.range-buttons .btn-range.active,
+.range-buttons .btn-range[aria-pressed="true"],
+.filters button.active,
+.filters button[aria-pressed="true"],
+.date-range button.active,
+.date-range button[aria-pressed="true"],
+.btn-chip.active,
+.btn-chip[aria-pressed="true"]{
+  background: linear-gradient(180deg,#4f75ff,#3a5bff);
+  border-color: rgba(140,170,255,.75);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(64,112,255,.28), inset 0 0 0 1px rgba(255,255,255,.10);
+}
+.range-buttons .btn-range:focus-visible,
+.filters button:focus-visible,
+.date-range button:focus-visible,
+.btn-chip:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(80,140,255,.50);
+}
+
+/* Inputs de fecha */
+input[type="date"],
+.date-input{
+  background: rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  color:#fff;
+  border-radius:10px;
+  padding:6px 10px;
+  font-size:.9rem;
+}
+
+/* ====== Tarjetas generales ====== */
+.cards{
+  display:grid;
+  gap:16px;
+  grid-template-columns: repeat(12, 1fr);
+}
 .card{
-  background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:14px; cursor:pointer;
-  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border:1px solid var(--border);
+  border-radius:14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.28);
+  padding:16px;
+  min-height:96px;
 }
-.card:hover{transform:translateY(-2px); box-shadow:0 10px 30px rgba(0,0,0,.25); border-color:#26303a}
-.card-title{font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.card-metrics{display:flex; gap:10px; margin-top:10px; flex-wrap:wrap}
-.badge{padding:6px 8px; border-radius:10px; background:#0d1217; border:1px solid #212831; font-size:12px}
-.badge.accent{border-color:rgba(255,59,92,.35); color:#ffb2bf}
-.badge.ok{border-color:rgba(16,185,129,.35); color:#9af0cf}
-.badge.warn{border-color:rgba(245,158,11,.35); color:#ffd9a1}
-.thumbs-card,.chart-card{
-  background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.2)
+.card.span-3{ grid-column: span 3; }
+.card.span-4{ grid-column: span 4; }
+
+/* ====== KPI grid refinado ====== */
+.kpi-grid{
+  display:grid;
+  gap:16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top:20px;
 }
-.detail{margin-top:20px}
-.detail-header{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px}
-.chips{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap}
-.chip{background:#0d1217; border:1px solid #212831; color:#cdd6e2; padding:6px 8px; border-radius:999px; font-size:12px}
-.thumbs{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
-.thumb{width:110px; height:110px; border-radius:12px; border:1px solid #222a33; background:#0d1217 center/cover no-repeat}
-.loader{
-  width:24px; height:24px; position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
-  border-radius:8px; background:linear-gradient(90deg,var(--accent) 0 4px,transparent 4px), #171c22;
-  box-shadow:0 10px 30px rgba(0,0,0,.35);
+@media (max-width:1100px){ .kpi-grid{ grid-template-columns: repeat(2, 1fr); } }
+@media (max-width:640px){ .kpi-grid{ grid-template-columns: 1fr; } }
+
+.kpi-card h3{
+  margin:0 0 .35rem 0;
+  font-weight:800;
+  letter-spacing:.2px;
+  color:#dfe7ff;
 }
-.muted{color:var(--muted)}
-@media (max-width:1024px){.grid{grid-template-columns:1fr 1fr} .kpi-row{grid-template-columns:1fr 1fr 1fr}}
-@media (max-width:720px){.grid{grid-template-columns:1fr} .kpi-row{grid-template-columns:1fr 1fr}}
+.kpi-body{
+  display:flex; flex-direction:column; justify-content:center; gap:.25rem;
+  min-height:84px;
+}
+.kpi-value{
+  display:block;
+  max-width:100%;
+  font-weight:900;
+  font-variant-numeric: tabular-nums;
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size: clamp(22px, 3.2vw, 36px);
+  color:#ffffff;
+}
+.kpi-hint{ opacity:.85; color:#c6d2ff; }
+.kpi-today .kpi-value{ font-size: clamp(22px, 3.2vw, 34px); margin-top:.25rem; }
+
+/* Valores dentro de tarjetas genéricas (si tu JS usa data-role) */
+.card [data-role="value"]{
+  font-size:1.4rem; font-weight:800; color:rgba(255,255,255,.96); margin-top:6px;
+}
+.card [data-role="sub"]{ opacity:.9; font-size:.95rem; color:rgba(255,255,255,.86); }
+
+/* ====== Overview (tarjetas de clientes) ====== */
+#overview-list{ margin-top:16px; }
+#overview-list .card{ padding:16px; }
+#overview-list .btn-dashboard{ margin-top:10px; }
+
+/* ====== Chips / badges reutilizables ====== */
+.metric-chip, .badge{
+  font-weight: 800;
+  padding: .25rem .55rem;
+  border-radius: 999px;
+  background: rgba(86,120,255,.18);
+  border: 1px solid rgba(140,170,255,.35);
+  color: #e9efff;
+}
+.badges{ display:flex; gap:6px; align-items:center; }
+
+/* ====== Campañas (dashboard del cliente) ====== */
+.campaign-list{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px,1fr));
+  gap:14px;
+}
+
+/* Tarjeta de campaña (usada por tu HTML actual) */
+.campaign-card{
+  display:flex; flex-direction:column; align-items:flex-start; text-align:left;
+  background: linear-gradient(180deg, rgba(86,120,255,.06), rgba(86,120,255,.03));
+  border: 1px solid rgba(140,170,255,.28);
+  border-radius:14px;
+  padding:14px 14px 12px;
+  color:#eaf0ff;
+  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+  transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.campaign-card:hover{ transform: translateY(-1px); border-color: rgba(140,170,255,.55); box-shadow: 0 10px 24px rgba(64,112,255,.25); }
+.campaign-card:focus-visible{ outline:none; box-shadow: 0 0 0 3px rgba(80,140,255,.55); }
+.campaign-card .title{ font-weight:800; margin-bottom:10px; letter-spacing:.2px; color:#fff; }
+.campaign-card .chip-bar{ display:flex; gap:.45rem; flex-wrap:wrap; }
+
+/* (Compat) Si en algún momento usas .campaign-pill, que luzca igual */
+.campaign-pill{
+  display:flex; justify-content:space-between; gap:8px;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid rgba(96,165,250,.35);
+  background: rgba(59,130,246,.18);
+  color:#fff; font-weight:700; text-align:left; cursor:pointer;
+}
+.campaign-pill.active{ outline:2px solid rgba(59,130,246,.85); }
+
+/* Resumen de campaña seleccionado encima de la grilla */
+.chips-row{ display:flex; flex-wrap:wrap; gap:.5rem; margin:6px 0 14px; }
+
+/* ====== Miniaturas de anuncios ====== */
+.thumb-grid{
+  display:grid; gap:16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin-top:8px;
+}
+.thumb-card{
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 22px rgba(0,0,0,.22);
+  transition: transform .08s ease, box-shadow .2s ease;
+}
+.thumb-card:hover{ transform: translateY(-1px); }
+.thumb-img{ width:100%; aspect-ratio:16/9; background:#0b1225; position:relative; }
+.thumb-img img{ width:100%; height:100%; object-fit:cover; display:block; }
+.thumb-info{ padding:10px 12px 12px; }
+.thumb-info .name{ font-weight:700; margin-bottom:8px; color:#eef4ff; }
+.thumb-info .chip-bar{ display:flex; gap:.45rem; flex-wrap:wrap; align-items:center; }
+
+/* (Compat) Si usas clases ad-* en otra vista, que se vean bien también */
+.ad-card{
+  border:1px solid rgba(96,165,250,.25);
+  border-radius:14px; overflow:hidden;
+  background: rgba(255,255,255,.03);
+  box-shadow: 0 10px 24px rgba(0,0,0,.25);
+}
+.ad-media{ position:relative; aspect-ratio:16/9; background:#0b1220; }
+.ad-media img{ width:100%; height:100%; object-fit:cover; display:block; }
+.ad-overlay{
+  position:absolute; inset:auto 0 0 0; padding:8px;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(2,6,23,.9) 80%);
+  display:flex; gap:6px; justify-content:flex-start;
+}
+.ad-badge{
+  padding:4px 8px; border-radius:999px; font-size:.78rem;
+  background:rgba(59,130,246,.9); color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.ad-title{ padding:10px; font-weight:700; color:#fff; }
+
+/* ===== Utilidades ===== */
+#sumSpend, #sumResults, #sumCPR{ font-variant-numeric: tabular-nums; }
+
+/* ===========================
+   OVERRIDES UX (no rompen layout)
+   =========================== */
+
+/* KPI cards: evita desbordes y mejora lectura */
+.kpi-card, .card-kpi, .panel-kpi { position: relative; }
+.kpi-card h3, .card-kpi h3, .panel-kpi h3{
+  margin: 0 0 .35rem 0; font-weight: 700; letter-spacing: .2px;
+}
+.kpi-amount, .kpi-number{ /* alias por compatibilidad */
+  display:block; max-width:100%; font-weight:800; font-variant-numeric:tabular-nums;
+  line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  font-size: clamp(22px, 3.2vw, 36px);
+}
+.kpi-subvalue{ opacity:.85; font-size:.95rem; }
+
+/* Si el contenedor usa flex */
+.kpi-content{ display:flex; flex-direction:column; justify-content:center; gap:.25rem; min-height:84px; }
+
+/* Chips de métricas en miniaturas (asegura wrap) */
+.thumb-card .chip-bar, .ad-thumb .chip-bar{ display:flex; gap:.4rem; flex-wrap:wrap; align-items:center; }
