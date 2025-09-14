@@ -394,3 +394,67 @@ def _500(_e):
         return render_template("error.html", code=500, message="Error interno"), 500
     except Exception:
         return jsonify({"error": "internal_error"}), 500
+# --- MAGIC LINK Y GUARDAS (AÑADIR AL FINAL DE app/routes.py) ---
+from flask import session, request, redirect, abort
+
+@bp.route("/s/<slug>")
+def magic_link(slug):
+    """
+    Link para clienta. Setea sesión y te lleva a su dashboard.
+    No depende de querystrings (?k=ok es ignorado).
+    """
+    session["client_slug"] = slug
+    session["is_client"] = True
+    # dura 7 días (cookie firmada por SECRET_KEY)
+    session.permanent = True
+    return redirect(f"/dashboard/{slug}")
+
+@bp.route("/logout")
+def logout():
+    """Salir del modo clienta y volver a la Vista General (admin)."""
+    session.clear()
+    return redirect("/overview")
+
+@bp.before_app_request
+def _client_guard():
+    """
+    Si hay clienta en sesión, sólo puede:
+      - ver su dashboard /dashboard/<slug>
+      - consumir estáticos y APIs
+      - usar /s/<slug> y /logout
+      - /overview la redirige a su dashboard
+    Impide abrir /dashboard/<otro_slug>.
+    """
+    slug = session.get("client_slug")
+    if not slug:
+        return  # no estás en modo clienta: todo normal
+
+    path = request.path.rstrip("/")
+
+    # Rutas siempre permitidas en modo clienta
+    if (
+        path.startswith("/static")
+        or path.startswith("/api/")
+        or path.startswith("/get_")
+        or path.startswith("/s/")
+        or path == "/logout"
+    ):
+        return
+
+    # Forzar /overview -> su propio dashboard
+    if path == "/overview" or path == "":
+        return redirect(f"/dashboard/{slug}")
+
+    # Si entra a /dashboard/<otro>, bloquear
+    if path.startswith("/dashboard/"):
+        try:
+            target = path.split("/")[2]
+        except IndexError:
+            target = ""
+        if target and target != slug:
+            # 403 con tu plantilla de error
+            abort(403)
+
+    # En cualquier otro caso, dejar pasar
+    return
+# --- FIN BLOQUE ---
