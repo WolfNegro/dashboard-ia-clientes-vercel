@@ -1,11 +1,27 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/index.py", "use": "@vercel/python" }
+    { "src": "run.py", "use": "@vercel/python" }
   ],
   "routes": [
-    { "src": "^/static/(.*)$", "dest": "api/index.py" },
-    { "src": "^/favicon\\.ico$", "dest": "api/index.py" },
-    { "src": ".*", "dest": "api/index.py" }
+    // archivos estáticos directos
+    { "src": "^/static/(.*)$", "dest": "app/static/$1" },
+    { "src": "^/(favicon\\.ico|robots\\.txt)$", "dest": "app/static/$1" },
+
+    // tus rutas ya existentes
+    { "src": "^/$", "dest": "run.py" },
+    { "src": "^/overview$", "dest": "run.py" },
+    { "src": "^/dashboard/[^/]+$", "dest": "run.py" },
+    { "src": "^/api/overview$", "dest": "run.py" },
+    { "src": "^/get_campaigns_active/.*$", "dest": "run.py" },
+    { "src": "^/get_ads_by_campaign/.*$", "dest": "run.py" },
+
+    // NUEVAS rutas de magic/admin/logout -> Python
+    { "src": "^/s/[^/]+$", "dest": "run.py" },
+    { "src": "^/admin$", "dest": "run.py" },
+    { "src": "^/logout$", "dest": "run.py" },
+
+    // catch-all final (por si aparece otra ruta dinámica)
+    { "src": "^(?!/static/).*$", "dest": "run.py" }
   ]
 }
