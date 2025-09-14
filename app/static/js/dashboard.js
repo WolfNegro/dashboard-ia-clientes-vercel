@@ -283,3 +283,24 @@
     }
   });
 })();
+// --- NUEVO: ajustes de "modo clienta" para /s/<slug> ---
+(function () {
+  const isClientMode = location.pathname.startsWith('/s/');
+
+  if (!isClientMode) return;
+
+  // 1) Ocultar el botón "Vista General"
+  //    Buscamos por texto para no depender de clases/ids.
+  const btns = Array.from(document.querySelectorAll('a,button'));
+  const btnVista = btns.find(el => el.textContent && el.textContent.trim() === 'Vista General');
+  if (btnVista) btnVista.remove();
+
+  // 2) Ocultar solo la tarjeta que tiene el título "Hoy"
+  const titles = Array.from(document.querySelectorAll('h3, .card h2, .card h4'));
+  const hoyTitle = titles.find(h => h.textContent && h.textContent.trim() === 'Hoy');
+  if (hoyTitle) {
+    const card = hoyTitle.closest('.card');
+    if (card) card.remove();
+  }
+})();
+ // --- FIN NUEVO ---

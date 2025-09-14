@@ -458,3 +458,10 @@ def _client_guard():
     # En cualquier otro caso, dejar pasar
     return
 # --- FIN BLOQUE ---
+# --- NUEVO: ruta pública /s/<slug> que usa el mismo template del dashboard ---
+@bp.route("/s/<slug>")
+def dashboard_public(slug):
+    # Misma pantalla del dashboard, pero será “modo clienta”.
+    # No cambiamos el HTML aquí: el JS se encargará de ocultar lo que no corresponde.
+    return render_template("dashboard.html", slug=slug)
+# --- FIN NUEVO ---
