@@ -1,113 +1,102 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>{{ client_name }}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ client_name }} — Dashboard</title>
+
   <link rel="stylesheet" href="/static/css/main.css" />
-  <style>
-    :root { --bg:#0b111a; --panel:#0e1622; --line:rgba(255,255,255,.08); --muted:rgba(255,255,255,.65); }
-    body { background:var(--bg); color:#fff; }
-    .wrap{max-width:1280px;margin:24px auto;padding:0 16px}
-    .h1{font-size:28px;font-weight:800;margin:0 0 12px}
-    /* Segment control */
-    .seg { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin:8px 0 16px }
-    .seg .opt { background:#0f1a2c; border:1px solid var(--line); color:#c7d2fe; padding:8px 12px; border-radius:10px; cursor:pointer; }
-    .seg .opt.active { background:#2563eb; border-color:#2563eb; color:#fff; }
-    .seg .range { display:none; gap:6px; align-items:center }
-    .seg .range.show { display:flex }
-    .seg input[type="date"]{ background:#0f1a2b; color:#fff; border:1px solid var(--line); padding:8px 10px; border-radius:8px }
-    .btn { background:#2563eb; border:none; color:#fff; padding:9px 14px; border-radius:10px; cursor:pointer }
-    .btn[disabled]{ opacity:.6; cursor:not-allowed }
-    .btn .spin{ display:none; margin-left:8px; width:14px; height:14px; border:2px solid rgba(255,255,255,.5); border-top-color:#fff; border-radius:50%; animation:sp 1s linear infinite }
-    .btn.loading .spin{ display:inline-block }
-    @keyframes sp{to{transform:rotate(360deg)}}
-
-    .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:10px}
-    .stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
-    .stat h4{opacity:.7;font-size:13px;margin:0 0 8px}
-    .stat .v{font-size:22px;font-weight:800}
-
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-    .card{background:#0d1420;border:1px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;transition:.12s}
-    .card:hover{transform:translateY(-1px);box-shadow:0 0 0 1px rgba(37,99,235,.35)}
-    .badge{display:inline-block;background:#0f1a2b;border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:12px;margin:4px 6px 0 0}
-
-    .section{background:#0d1420;border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:14px}
-    .chart-box{height:320px}          /* ALTURA FIJA -> no hay pantalla infinita */
-    .chart-box canvas{width:100%;height:100%}
-
-    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-    .thumb{background:#0f1623;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-    .thumb img{width:100%;height:130px;object-fit:cover;display:block}
-    .thumb .meta{padding:8px;font-size:12px;display:flex;flex-wrap:wrap;gap:6px}
-    .chip{background:#0f1a2b;border:1px solid var(--line);border-radius:999px;padding:4px 8px}
-    .muted{color:var(--muted)}
-    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .right{margin-left:auto}
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
-<body>
-  <div class="wrap">
-    <div class="h1">{{ client_name }}</div>
 
-    <!-- Selector de fechas -->
-    <div class="toolbar">
-      <div class="seg" id="seg">
-        <button class="opt active" data-preset="today">Hoy</button>
-        <button class="opt" data-preset="yesterday">Ayer</button>
-        <button class="opt" data-preset="last_7d">7 días</button>
-        <button class="opt" data-preset="this_month">Mes actual</button>
-        <button class="opt" data-preset="last_month">Mes pasado</button>
-        <button class="opt" data-preset="range" id="opt-range">Rango</button>
-        <div class="range" id="range">
-          <input type="date" id="since">
-          <span class="muted">a</span>
-          <input type="date" id="until">
+<body>
+  <div class="container">
+    <header class="page-header">
+      <h1>{{ client_name }}</h1>
+
+      <div class="filters range-buttons">
+        <button class="btn-range active" data-preset="hoy" aria-pressed="true">Hoy</button>
+        <button class="btn-range" data-preset="ayer" aria-pressed="false">Ayer</button>
+        <button class="btn-range" data-preset="7d" aria-pressed="false">7 días</button>
+        <button class="btn-range" data-preset="mes_actual" aria-pressed="false">Mes actual</button>
+        <button class="btn-range" data-preset="mes_pasado" aria-pressed="false">Mes pasado</button>
+        <button class="btn-range" data-preset="rango" aria-pressed="false">Rango</button>
+
+        <input type="date" id="dateSince" class="date-input" />
+        <input type="date" id="dateUntil" class="date-input" />
+        <button id="btnApply" class="btn" style="display:none">Aplicar</button>
+
+        <a href="/overview" class="btn btn-primary" style="margin-left:auto;">Vista General</a>
+      </div>
+    </header>
+
+    <!-- KPIs -->
+    <section class="kpi-grid">
+      <div class="card kpi-card">
+        <h3>Gasto total</h3>
+        <div class="kpi-body">
+          <span id="kpiSpendTotal" class="kpi-value">—</span>
         </div>
       </div>
 
-      <button id="apply" class="btn">Aplicar <span class="spin"></span></button>
-      <a class="btn right" href="/overview">Vista General</a>
-    </div>
+      <div class="card kpi-card">
+        <h3>Resultados</h3>
+        <div class="kpi-body">
+          <span id="kpiResultsTotal" class="kpi-value">—</span>
+          <span class="kpi-hint">Mensajes iniciados</span>
+        </div>
+      </div>
 
-    <!-- Top KPIs -->
-    <div class="stats">
-      <div class="stat"><h4>Gasto total</h4><div class="v" id="kpi-spend">—</div></div>
-      <div class="stat"><h4>Resultados</h4><div class="v" id="kpi-results">—</div><div class="muted" style="font-size:12px">Mensajes iniciados</div></div>
-      <div class="stat"><h4>Costo por resultado</h4><div class="v" id="kpi-cpr">—</div></div>
-      <div class="stat"><h4>Ayer</h4><div class="v" id="kpi-yesterday">—</div><div class="muted" style="font-size:12px">Resultados</div></div>
-      <div class="stat"><h4>Hoy</h4><div class="v" id="kpi-today">—</div><div class="muted" style="font-size:12px">Resultados</div></div>
-    </div>
+      <div class="card kpi-card">
+        <h3>Costo por resultado</h3>
+        <div class="kpi-body">
+          <span id="kpiCPR" class="kpi-value">—</span>
+        </div>
+      </div>
+
+      <div class="card kpi-card">
+        <h3>Ayer</h3>
+        <div class="kpi-body">
+          <span id="kpiYesterdayResults" class="kpi-value">—</span>
+          <span class="kpi-hint">Resultados</span>
+        </div>
+      </div>
+
+      <div class="card kpi-card kpi-today">
+        <h3>Hoy</h3>
+        <div class="kpi-body">
+          <span id="kpiTodaySpend" class="kpi-value">—</span>
+          <span class="kpi-hint">Resultados</span>
+        </div>
+      </div>
+    </section>
 
     <!-- Campañas -->
-    <h3 style="margin:6px 0 8px">Campañas</h3>
-    <div id="campaigns" class="grid"></div>
+    <section class="section">
+      <h2>Campañas</h2>
+      <p>Selecciona una campaña</p>
 
-    <!-- Detalle de campaña -->
-    <div class="section">
-      <h3 id="camp-title" style="margin:0 0 8px">Selecciona una campaña</h3>
-      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-        <span class="badge" id="camp-spend">Gasto: —</span>
-        <span class="badge" id="camp-results">Resultados: —</span>
-        <span class="badge" id="camp-cpr">CPR: —</span>
+      <div class="chips-row">
+        <span class="metric-chip">Gasto: <span id="sumSpend">—</span></span>
+        <span class="metric-chip">Resultados: <span id="sumResults">—</span></span>
+        <span class="metric-chip">CPR: <span id="sumCPR">—</span></span>
       </div>
-      <div class="chart-box"><canvas id="chart"></canvas></div>
-    </div>
+
+      <div id="campaignList" class="campaign-list"></div>
+    </section>
 
     <!-- Miniaturas -->
-    <div class="section">
-      <h3 style="margin:0 0 8px">Miniaturas de anuncios</h3>
-      <div id="thumbs" class="thumbs"></div>
-    </div>
+    <section class="section">
+      <h2>Miniaturas de anuncios</h2>
+      <div id="thumbs" class="thumb-grid"></div>
+    </section>
   </div>
 
   <script>
-    window.CLIENT_ID = {{ client_id|tojson }};
+    window.CLIENT_ID   = {{ client_id|tojson }};
     window.CLIENT_NAME = {{ client_name|tojson }};
     window.AD_ACCOUNTS = {{ ad_account_ids|tojson }};
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="/static/js/dashboard.js"></script>
 </body>
 </html>

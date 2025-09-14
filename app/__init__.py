@@ -1,36 +1,14 @@
-# app/__init__.py
-
-from flask import Flask
-from dotenv import load_dotenv
+from flask import Flask, render_template
+from .routes import bp as routes_bp
 
 def create_app():
-    """
-    Función de fábrica para crear y configurar la aplicación Flask.
-    """
-    load_dotenv() # Carga las variables de entorno
-    
-    app = Flask(__name__)
-    
-    # Envolvemos las importaciones y el registro en el contexto de la aplicación
-    # para evitar importaciones circulares y asegurar que todo esté disponible.
-    with app.app_context():
-        # Importamos las rutas, que ahora contienen la función de limpieza
-        from . import routes
-        
-        # Registramos el blueprint en la aplicación
-        app.register_blueprint(routes.routes)
-        
-        # ==============================================================================
-        #    CIRUGÍA FINAL: LLAMADA DIRECTA A LA FUNCIÓN DE LIMPIEZA
-        # ==============================================================================
-        # En lugar de usar el obsoleto 'before_first_request', llamamos a la función
-        # directamente aquí. Se ejecutará una sola vez cuando el servidor arranque.
-        
-        # routes.limpiar_cache_antiguo()
+    app = Flask(__name__)  # usa /app/templates y /app/static
 
-        # ==============================================================================
-        #    FIN DE LA CIRUGÍA
-        # ==============================================================================
+    # rutas de la app
+    app.register_blueprint(routes_bp)
 
-    # Devolvemos la aplicación creada
+    @app.errorhandler(500)
+    def _500(e):
+        return render_template("error.html", code=500, message="Error interno"), 500
+
     return app
