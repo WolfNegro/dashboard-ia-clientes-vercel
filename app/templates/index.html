@@ -1,172 +1,113 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Centro de Comando IA - Dashboard Ads</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+  <meta charset="utf-8" />
+  <title>{{ client_name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/static/css/main.css" />
+  <style>
+    :root { --bg:#0b111a; --panel:#0e1622; --line:rgba(255,255,255,.08); --muted:rgba(255,255,255,.65); }
+    body { background:var(--bg); color:#fff; }
+    .wrap{max-width:1280px;margin:24px auto;padding:0 16px}
+    .h1{font-size:28px;font-weight:800;margin:0 0 12px}
+    /* Segment control */
+    .seg { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin:8px 0 16px }
+    .seg .opt { background:#0f1a2c; border:1px solid var(--line); color:#c7d2fe; padding:8px 12px; border-radius:10px; cursor:pointer; }
+    .seg .opt.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+    .seg .range { display:none; gap:6px; align-items:center }
+    .seg .range.show { display:flex }
+    .seg input[type="date"]{ background:#0f1a2b; color:#fff; border:1px solid var(--line); padding:8px 10px; border-radius:8px }
+    .btn { background:#2563eb; border:none; color:#fff; padding:9px 14px; border-radius:10px; cursor:pointer }
+    .btn[disabled]{ opacity:.6; cursor:not-allowed }
+    .btn .spin{ display:none; margin-left:8px; width:14px; height:14px; border:2px solid rgba(255,255,255,.5); border-top-color:#fff; border-radius:50%; animation:sp 1s linear infinite }
+    .btn.loading .spin{ display:inline-block }
+    @keyframes sp{to{transform:rotate(360deg)}}
+
+    .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:10px}
+    .stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+    .stat h4{opacity:.7;font-size:13px;margin:0 0 8px}
+    .stat .v{font-size:22px;font-weight:800}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .card{background:#0d1420;border:1px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;transition:.12s}
+    .card:hover{transform:translateY(-1px);box-shadow:0 0 0 1px rgba(37,99,235,.35)}
+    .badge{display:inline-block;background:#0f1a2b;border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:12px;margin:4px 6px 0 0}
+
+    .section{background:#0d1420;border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:14px}
+    .chart-box{height:320px}          /* ALTURA FIJA -> no hay pantalla infinita */
+    .chart-box canvas{width:100%;height:100%}
+
+    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+    .thumb{background:#0f1623;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    .thumb img{width:100%;height:130px;object-fit:cover;display:block}
+    .thumb .meta{padding:8px;font-size:12px;display:flex;flex-wrap:wrap;gap:6px}
+    .chip{background:#0f1a2b;border:1px solid var(--line);border-radius:999px;padding:4px 8px}
+    .muted{color:var(--muted)}
+    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .right{margin-left:auto}
+  </style>
 </head>
 <body>
-    <div id="loader"><div class="spinner"></div></div>
+  <div class="wrap">
+    <div class="h1">{{ client_name }}</div>
 
-    <div id="app-content" style="display: none;">
-        <h1><i class="fa-solid fa-brain"></i> Centro de Comando IA</h1>
-        <div id="notification-area"></div>
-        <div class="control-panel">
-            <select id="cuenta-select" disabled><option>Cargando...</option></select>
-            <select id="campana-select" disabled><option>Seleccione cuenta</option></select>
-            <input type="text" id="fecha" placeholder="Seleccione un rango de fechas">
-            <button id="analizar-btn" disabled>Analizar Campaña</button>
+    <!-- Selector de fechas -->
+    <div class="toolbar">
+      <div class="seg" id="seg">
+        <button class="opt active" data-preset="today">Hoy</button>
+        <button class="opt" data-preset="yesterday">Ayer</button>
+        <button class="opt" data-preset="last_7d">7 días</button>
+        <button class="opt" data-preset="this_month">Mes actual</button>
+        <button class="opt" data-preset="last_month">Mes pasado</button>
+        <button class="opt" data-preset="range" id="opt-range">Rango</button>
+        <div class="range" id="range">
+          <input type="date" id="since">
+          <span class="muted">a</span>
+          <input type="date" id="until">
         </div>
+      </div>
 
-        <div id="dashboard-container" style="display: none;">
-            <div class="dashboard-grid-main">
-
-                <div class="card" id="metricas-card">
-                    <h2><i class="fa-solid fa-chart-pie"></i> Métricas Principales</h2>
-                    <div id="metricas-grid-container"></div>
-                </div>
-
-                <div class="card" id="metricas-hoy-ayer-card">
-                    <div class="metricas-comparativa-container">
-                        <div class="metrica-diaria-box"><h3>Hoy</h3><div id="metricas-hoy-grid-container"></div></div>
-                        <div class="metrica-diaria-box"><h3>Ayer</h3><div id="metricas-ayer-grid-container"></div></div>
-                    </div>
-                     
-                    <!-- ============================================================================== -->
-                    <!--     CIRUGÍA: INICIO - Añadimos el texto de llamada a la acción                 -->
-                    <!-- ============================================================================== -->
-                    <div class="card-hover-prompt">
-                        <i class="fa-solid fa-magnifying-glass-chart"></i>
-                        <span>Clic para análisis detallado</span>
-                    </div>
-                    <!-- ============================================================================== -->
-                    <!--     CIRUGÍA: FIN                                                             -->
-                    <!-- ============================================================================== -->
-
-                </div>
-
-                <div class="card" id="ranking-card">
-                    <h2><i class="fa-solid fa-ranking-star"></i> Clasificación de Rendimiento</h2>
-                    <div id="ranking-container">
-                        <div class="ranking-widget">
-                            <div class="ranking-header">
-                                <span class="ranking-title">Clasificación por Resultados</span>
-                                <span class="ranking-position" id="ranking-results-pos">-- de --</span>
-                            </div>
-                            <div class="ranking-bar-container">
-                                <div class="ranking-bar gradient-results">
-                                    <div id="ranking-results-marker" class="ranking-marker"></div>
-                                </div>
-                                <span class="ranking-label-min" id="ranking-results-min">0</span>
-                                <span class="ranking-label-max" id="ranking-results-max">0</span>
-                            </div>
-                            <div class="ranking-context-text" id="ranking-results-context">Seleccione una campaña para ver su clasificación.</div>
-                            <ul class="ranking-podium-list" id="ranking-results-podium"></ul>
-                        </div>
-                        <div class="ranking-widget">
-                            <div class="ranking-header">
-                                <span class="ranking-title">Clasificación por Costo/Resultado</span>
-                                <span class="ranking-position" id="ranking-cpr-pos">-- de --</span>
-                            </div>
-                            <div class="ranking-bar-container">
-                                <div class="ranking-bar gradient-cpr">
-                                    <div id="ranking-cpr-marker" class="ranking-marker"></div>
-                                </div>
-                                <span class="ranking-label-min" id="ranking-cpr-min">S/0</span>
-                                <span class="ranking-label-max" id="ranking-cpr-max">S/0</span>
-                            </div>
-                            <div class="ranking-context-text" id="ranking-cpr-context">Seleccione una campaña para ver su clasificación.</div>
-                            <ul class="ranking-podium-list" id="ranking-cpr-podium"></ul>
-                        </div>
-                    </div>
-                </div>
-                 
-                <div class="card" id="briefing-card">
-                    <h2><i class="fa-solid fa-lightbulb"></i> Briefing Estratégico</h2>
-                    <div id="briefing-content" class="briefing-content"></div>
-                </div>
-
-                <div class="card" id="graficos-evolucion-card">
-                    <h2><i class="fa-solid fa-chart-line"></i> Evolución de la Campaña</h2>
-                    <div class="charts-grid-container">
-                        <div class="chart-container"><canvas id="grafico-resultados"></canvas></div>
-                        <div class="chart-container"><canvas id="grafico-cpr"></canvas></div>
-                        <div class="chart-container"><canvas id="grafico-gasto"></canvas></div>
-                    </div>
-                </div>
-
-                <div class="card" id="top-anuncios-card">
-                    <h2><i class="fa-solid fa-trophy"></i> Top Anuncios con Mejor CPR</h2>
-                    <div id="top-ads-container"></div>
-                </div>
-
-            </div>
-        </div>
+      <button id="apply" class="btn">Aplicar <span class="spin"></span></button>
+      <a class="btn right" href="/overview">Vista General</a>
     </div>
 
-    <!-- ============================================================================== -->
-    <!--                       ESTRUCTURA DE MODALES                                    -->
-    <!-- ============================================================================== -->
-     
-    <div id="chart-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">×</span>
-            <div id="modal-chart-container"><canvas id="modal-chart-canvas"></canvas></div>
-        </div>
-    </div>
-     
-    <div id="historical-analysis-modal" class="modal">
-        <div class="modal-content large">
-            <span class="close-button">×</span>
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-clock-rotate-left"></i> Análisis Histórico de Tendencias</h3>
-            </div>
-             
-            <div id="historical-view-loader" class="view-loader">
-                <div class="spinner"></div>
-            </div>
-
-            <div id="historical-view-content" style="display: none;">
-                <div class="period-selector">
-                    <button class="period-btn" data-period="3">Últimos 3 días</button>
-                    <button class="period-btn" data-period="7">Últimos 7 días</button>
-                    <button class="period-btn" data-period="30">Últimos 30 días</button>
-                </div>
-
-                <div class="comparison-summary-container">
-                    <h4 id="historical-trend-header">Tendencia</h4>
-                                       <table>
-                        <thead>
-                            <tr>
-                                <th>Métrica Clave</th>
-                                <th>Total (Período)</th>
-                                <th>Tendencia</th>
-                            </tr>
-                        </thead>
-                        <tbody id="comparison-summary-tbody">
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="comparison-chart-container">
-                    <canvas id="historical-chart-canvas"></canvas>
-                </div>
-            </div>
-        </div>
+    <!-- Top KPIs -->
+    <div class="stats">
+      <div class="stat"><h4>Gasto total</h4><div class="v" id="kpi-spend">—</div></div>
+      <div class="stat"><h4>Resultados</h4><div class="v" id="kpi-results">—</div><div class="muted" style="font-size:12px">Mensajes iniciados</div></div>
+      <div class="stat"><h4>Costo por resultado</h4><div class="v" id="kpi-cpr">—</div></div>
+      <div class="stat"><h4>Ayer</h4><div class="v" id="kpi-yesterday">—</div><div class="muted" style="font-size:12px">Resultados</div></div>
+      <div class="stat"><h4>Hoy</h4><div class="v" id="kpi-today">—</div><div class="muted" style="font-size:12px">Resultados</div></div>
     </div>
 
-    <script> const CUENTAS = {{ cuentas | tojson | safe }}; const ERROR_MESSAGE = {{ error_message | tojson | safe }}; </script>
+    <!-- Campañas -->
+    <h3 style="margin:6px 0 8px">Campañas</h3>
+    <div id="campaigns" class="grid"></div>
+
+    <!-- Detalle de campaña -->
+    <div class="section">
+      <h3 id="camp-title" style="margin:0 0 8px">Selecciona una campaña</h3>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <span class="badge" id="camp-spend">Gasto: —</span>
+        <span class="badge" id="camp-results">Resultados: —</span>
+        <span class="badge" id="camp-cpr">CPR: —</span>
+      </div>
+      <div class="chart-box"><canvas id="chart"></canvas></div>
+    </div>
+
+    <!-- Miniaturas -->
+    <div class="section">
+      <h3 style="margin:0 0 8px">Miniaturas de anuncios</h3>
+      <div id="thumbs" class="thumbs"></div>
+    </div>
+  </div>
+
+  <script>
+    window.CLIENT_ID = {{ client_id|tojson }};
+    window.CLIENT_NAME = {{ client_name|tojson }};
+    window.AD_ACCOUNTS = {{ ad_account_ids|tojson }};
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="/static/js/dashboard.js"></script>
 </body>
 </html>

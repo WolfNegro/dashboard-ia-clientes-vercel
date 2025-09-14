@@ -26,7 +26,7 @@ def create_app():
         # En lugar de usar el obsoleto 'before_first_request', llamamos a la función
         # directamente aquí. Se ejecutará una sola vez cuando el servidor arranque.
         
-        routes.limpiar_cache_antiguo()
+        # routes.limpiar_cache_antiguo()
 
         # ==============================================================================
         #    FIN DE LA CIRUGÍA

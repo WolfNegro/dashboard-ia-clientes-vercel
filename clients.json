@@ -1,15 +1,38 @@
 {
-  "cliente_moxi_odontologia": {
-    "client_name": "Clínica Odontológica MOXI",
+  "clinic_prime": {
+    "client_name": "Clinic Prime",
     "ad_account_ids": [
-      "act_190580319583987"
+      "act_1936205300197961"
     ]
   },
-  "cliente_nuevo_gimnasio": {
-    "client_name": "Gimnasio FuerteFit",
+  "dra_pia": {
+    "client_name": "Dra Pia",
     "ad_account_ids": [
-      "act_1111111111111111",
-      "act_2222222222222222"
+      "act_656429489968746"
+    ]
+  },
+  "harmony": {
+    "client_name": "Harmony",
+    "ad_account_ids": [
+      "act_108136003058369"
+    ]
+  },
+  "mc_dent": {
+    "client_name": "Mc Dent",
+    "ad_account_ids": [
+      "act_1134230691934672"
+    ]
+  },
+  "amaru": {
+    "client_name": "Amaru",
+    "ad_account_ids": [
+      "act_467988697275854"
+    ]
+  },
+  "dra_claudia": {
+    "client_name": "Dra Claudia",
+    "ad_account_ids": [
+      "act_2445384242513718"
     ]
   }
 }

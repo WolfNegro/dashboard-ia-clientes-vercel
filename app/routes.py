@@ -1,216 +1,191 @@
 # app/routes.py
+from __future__ import annotations
 
-from flask import Blueprint, render_template, request, jsonify, abort
-import os
 import json
-import logging
-from datetime import datetime, timedelta, date
+from pathlib import Path
+from typing import Any, Dict, List
+
+from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
 from .facebook_manager import FacebookAdsManager
-from .utils import (
-    procesar_metricas_diarias, procesar_metricas_totales,
-    generar_prompt_completo, calcular_comparativa, procesar_datos_ranking,
-    procesar_datos_comparativos_historicos
-)
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-routes = Blueprint('routes', __name__)
+routes = Blueprint("routes", __name__)
 
-RAW_CACHE_DIR = 'cache_raw'
-if not os.path.exists(RAW_CACHE_DIR):
-    os.makedirs(RAW_CACHE_DIR)
+# ----------------- carga de clientes -----------------
+BASE_DIR = Path(__file__).resolve().parent.parent
+CLIENTS_PATH = BASE_DIR / "clients.json"
 
-# Función de limpieza de caché (desconectada, sin decorador)
-def limpiar_cache_antiguo():
-    """Elimina archivos de caché con más de 7 días de antigüedad."""
-    logging.info("Ejecutando rutina de limpieza de caché antiguo...")
+def _load_clients() -> Dict[str, Any]:
     try:
-        for filename in os.listdir(RAW_CACHE_DIR):
-            file_path = os.path.join(RAW_CACHE_DIR, filename)
-            try:
-                date_str = filename.split('_RAW_')[-1].replace('.json', '')
-                file_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                if (date.today() - file_date).days > 7:
-                    os.remove(file_path)
-                    logging.info(f"Eliminado caché antiguo: {filename}")
-            except (ValueError, IndexError) as e:
-                logging.warning(f"No se pudo procesar el nombre del archivo de caché: {filename}. Error: {e}")
-                continue
-    except Exception as e:
-        logging.error(f"Error durante la limpieza del caché: {e}", exc_info=True)
-
-def load_clients():
-    try:
-        with open('clients.json', 'r') as f:
+        with open(CLIENTS_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        logging.error(f"CRÍTICO: Error al cargar 'clients.json': {e}")
+    except Exception:
         return {}
 
-@routes.route('/dashboard/<string:client_id>')
-def index(client_id):
-    clients_config = load_clients()
-    client_data = clients_config.get(client_id)
-    if not client_data:
-        abort(404)
-    access_token = os.getenv('ACCESS_TOKEN')
-    cuentas = []
-    error_message = None
-    if not access_token:
-        error_message = "Error de configuración del servidor."
+CLIENTS: Dict[str, Any] = _load_clients()
+FB = FacebookAdsManager()
+
+
+def _first_client_id() -> str:
+    return next(iter(CLIENTS.keys())) if CLIENTS else ""
+
+
+def _get_accounts(client_id: str) -> List[str]:
+    info = CLIENTS.get(client_id) or {}
+    ids = info.get("ad_account_ids") or []
+    out: List[str] = []
+    for aid in ids:
+        s = str(aid).strip()
+        out.append(s if s.startswith("act_") else f"act_{s}")
+    return out
+
+
+# ----------------- vistas -----------------
+@routes.route("/")
+def home():
+    cid = _first_client_id()
+    if not cid:
+        return "Sin clientes cargados en clients.json", 500
+    return redirect(url_for("routes.dashboard", client_id=cid))
+
+
+@routes.route("/dashboard/<client_id>")
+def dashboard(client_id: str):
+    client = CLIENTS.get(client_id)
+    if not client:
+        return f"Cliente '{client_id}' no encontrado.", 404
+    return render_template(
+        "index.html",
+        client_id=client_id,
+        client_name=client.get("client_name", client_id),
+        ad_account_ids=_get_accounts(client_id),
+    )
+
+
+@routes.route("/overview")
+def overview():
+    return render_template("overview.html")
+
+
+# ----------------- APIs -----------------
+@routes.route("/get_campaigns/<ad_account_id>")
+def get_campaigns(ad_account_id: str):
+    rows = FB.get_campaigns(ad_account_id)
+    active_statuses = {"ACTIVE", "CAMPAIGN_GROUP_ACTIVE", "PAUSED", "IN_PROGRESS"}
+    out = []
+    for r in rows:
+        s = (r.get("status") or "").upper()
+        eff = (r.get("effective_status") or "").upper()
+        if (s in active_statuses) or (eff in active_statuses):
+            out.append(r)
+    return jsonify(out)
+
+
+@routes.route("/get_adsets/<campaign_id>")
+def get_adsets(campaign_id: str):
+    return jsonify(FB.get_adsets(campaign_id))
+
+
+@routes.route("/get_ads/<adset_id>")
+def get_ads(adset_id: str):
+    return jsonify(FB.get_ads(adset_id))
+
+
+@routes.route("/get_insights/campaign/<campaign_id>")
+def get_insights_campaign(campaign_id: str):
+    date_preset = request.args.get("date_preset")
+    time_increment = request.args.get("time_increment")
+    data = FB.get_campaign_insights(campaign_id, date_preset=date_preset, time_increment=time_increment)
+    return jsonify(data)
+
+
+# NUEVO: insights por ANUNCIO
+@routes.route("/get_insights/ad/<ad_id>")
+def get_insights_ad(ad_id: str):
+    date_preset = request.args.get("date_preset")
+    since = request.args.get("since")
+    until = request.args.get("until")
+    if since and until:
+        data = FB.insights_for_id(ad_id, since=since, until=until)
     else:
+        data = FB.insights_for_id(ad_id, date_preset=date_preset or "today")
+    return jsonify(data)
+
+
+# ---------- Suma segura (usada en /api/overview) ----------
+def _summarize(rows: List[dict]) -> Dict[str, float]:
+    spend = 0.0
+    msgs = 0.0
+
+    for r in rows:
+        # gasto
         try:
-            fb = FacebookAdsManager()
-            all_accounts = fb.get_ad_accounts(access_token)
-            allowed_ids = client_data.get("ad_account_ids", [])
-            cuentas = [acc for acc in all_accounts if acc['id'] in allowed_ids]
-            if not cuentas:
-                error_message = "No se encontraron cuentas publicitarias activas."
-        except Exception as e:
-            error_message = f"Error al conectar con la API de Facebook: {e}"
-    return render_template('index.html', cuentas=cuentas, error_message=error_message)
+            spend += float(r.get("spend") or 0)
+        except Exception:
+            pass
 
-@routes.route('/get_campaigns/<string:cuenta_id>')
-def get_campaigns_route(cuenta_id):
-    access_token = os.getenv('ACCESS_TOKEN')
-    if not access_token:
-        return jsonify({"error": "Token no configurado"}), 500
-    try:
-        return jsonify(FacebookAdsManager().get_campaigns(access_token, cuenta_id))
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # preferimos 'results'
+        added = False
+        val = r.get("results")
+        if val is not None:
+            try:
+                v = float(val)
+                msgs += v
+                added = v > 0
+            except Exception:
+                pass
 
-@routes.route('/get_comparative_metrics', methods=['POST'])
-def get_comparative_metrics_route():
-    access_token = os.getenv('ACCESS_TOKEN')
-    if not access_token:
-        return jsonify({"error": "Token de acceso no configurado en el servidor."}), 500
+        # fallback 'actions'
+        if not added:
+            for a in (r.get("actions") or []):
+                t = (a.get("action_type") or "").lower()
+                if (
+                    "onsite_conversion.messaging_conversation_started" in t
+                    or "messaging_conversation_started" in t
+                    or "messaging_conversations_started" in t
+                    or "omni_messaging_conversation_started" in t
+                    or "messaging_first_reply" in t
+                    or "conversation_started" in t
+                ):
+                    try:
+                        msgs += float(a.get("value") or 0)
+                    except Exception:
+                        pass
 
-    data = request.json
-    campaign_id = data.get('campaign_id')
-    cuenta_id = data.get('cuenta_id')
-    if not campaign_id or not cuenta_id:
-        return jsonify({"error": "Faltan 'campaign_id' o 'cuenta_id'."}), 400
+    cpr = (spend / msgs) if msgs else 0.0
+    return {"spend": round(spend, 2), "messages": round(msgs, 0), "cpr": round(cpr, 2)}
 
-    try:
-        fb = FacebookAdsManager()
-        raw_historical_data = get_cached_raw_data(fb, access_token, campaign_id)
-        processed_data = procesar_datos_comparativos_historicos(raw_historical_data)
-        moneda = fb.get_account_currency(access_token, cuenta_id)
 
-        return jsonify({"success": True, "data": processed_data, "moneda": moneda})
-    except Exception as e:
-        logging.error(f"Error en /get_comparative_metrics: {e}", exc_info=True)
-        return jsonify({"error": f"Error del servidor al obtener métricas comparativas: {e}"}), 500
+@routes.route("/api/overview")
+def api_overview():
+    date_preset = request.args.get("date_preset", "today")
+    since = request.args.get("since")
+    until = request.args.get("until")
 
-def get_cached_raw_data(fb_manager, access_token, campaign_id, days=90):
-    today_str = date.today().strftime('%Y-%m-%d')
-    cache_filename = f"{campaign_id}_RAW_{today_str}.json"
-    cache_filepath = os.path.join(RAW_CACHE_DIR, cache_filename)
+    rows_out: List[Dict[str, Any]] = []
 
-    if os.path.exists(cache_filepath):
-        logging.info(f"Caché de datos crudos encontrado para la campaña {campaign_id}. Leyendo desde el archivo.")
-        with open(cache_filepath, 'r') as f:
-            return json.load(f)
+    for cid, meta in CLIENTS.items():
+        accounts = _get_accounts(cid)
+        agg_spend = 0.0
+        agg_msgs = 0.0
 
-    logging.info(f"No se encontró caché para la campaña {campaign_id} hoy. Solicitando nuevos datos a la API.")
-    since_date = (date.today() - timedelta(days=days)).strftime('%Y-%m-%d')
-    until_date = today_str
+        for aid in accounts:
+            if since and until:
+                data = FB.get_account_insights_range(aid, since, until)
+            else:
+                data = FB.get_account_insights_preset(aid, date_preset)
+            s = _summarize(data)
+            agg_spend += s["spend"]
+            agg_msgs += s["messages"]
 
-    raw_data = fb_manager.get_metrics(access_token, campaign_id, since_date, until_date)
+        cpr = (agg_spend / agg_msgs) if agg_msgs else 0.0
 
-    with open(cache_filepath, 'w') as f:
-        json.dump(raw_data, f)
+        rows_out.append({
+            "client_id": cid,
+            "client_name": meta.get("client_name", cid),
+            "spend": round(agg_spend, 2),
+            "messages": round(agg_msgs, 0),
+            "cpr": round(cpr, 2),
+        })
 
-    return raw_data
-
-@routes.route('/analizar_campana', methods=['POST'])
-def analizar_campana_route():
-    access_token = os.getenv('ACCESS_TOKEN')
-    if not access_token:
-        return jsonify({"error": "Token no configurado"}), 500
-
-    data = request.json
-    required = ['cuenta_id', 'campaign_id', 'date_range']
-    if not all(key in data for key in required):
-        return jsonify({"error": "Faltan datos"}), 400
-
-    try:
-        fb = FacebookAdsManager()
-        cuenta_id = data['cuenta_id']
-        campaign_id = data['campaign_id']
-        since, until = data['date_range'].split(' - ')
-
-        hoy_format = date.today().strftime('%Y-%m-%d')
-        metricas_raw_hoy = fb.get_metrics(access_token, campaign_id, hoy_format, hoy_format)
-        metricas_hoy = procesar_metricas_totales(metricas_raw_hoy)
-
-        raw_data_90_days = get_cached_raw_data(fb, access_token, campaign_id)
-
-        user_range_insights = [
-            insight for insight in raw_data_90_days
-            if since <= insight['date_start'] <= until
-        ]
-
-        ayer_format = (date.today() - timedelta(days=1)).strftime('%Y-%m-%d')
-        ayer_insights = [
-            insight for insight in raw_data_90_days
-            if insight['date_start'] == ayer_format
-        ]
-        metricas_ayer = procesar_metricas_totales(ayer_insights)
-
-        metricas_totales = procesar_metricas_totales(user_range_insights)
-        metricas_diarias = procesar_metricas_diarias(user_range_insights)
-
-        todas_las_campanas_activas = fb.get_campaigns(access_token, cuenta_id)
-        insights_de_campanas = fb.get_all_campaign_insights_in_account(access_token, cuenta_id, since, until)
-        insights_dict = {i['campaign_id']: i for i in insights_de_campanas}
-
-        campaign_details_full = []
-        for campana in todas_las_campanas_activas:
-            insight_data = insights_dict.get(campana['id'])
-            metricas_ranking = procesar_metricas_totales(insight_data if insight_data else [])
-            campaign_details_full.append({
-                "id": campana['id'], "name": campana['name'],
-                "results": metricas_ranking.get('messages', 0),
-                "cost_per_result": metricas_ranking.get('cost_per_message', float('inf'))
-            })
-        ranking_data = procesar_datos_ranking(campaign_details_full, campaign_id)
-        if 'results' in ranking_data:
-            ranking_data['campaign_details'] = campaign_details_full
-
-        top_ads_raw = fb.get_top_performing_ads(access_token, campaign_id, since, until, limit=2)
-        top_anuncios = [
-            {
-                "id": ad.get('id'),
-                "imagen": ad.get('imagen'),
-                "metricas": procesar_metricas_totales(ad.get("insights", [])),
-                "nombre_anuncio": ad.get('nombre_anuncio', 'N/A'),
-                "texto_anuncio": ad.get('texto_anuncio', 'N/A')
-            } for ad in top_ads_raw
-        ]
-
-        moneda = fb.get_account_currency(access_token, cuenta_id)
-        prompt = generar_prompt_completo(
-            metricas_totales, metricas_diarias, top_anuncios,
-            moneda, data['date_range']
-        )
-        analisis_ia = fb.llamar_ia(prompt)
-
-        resultado_final = {
-            "metricas_totales": metricas_totales,
-            "metricas_diarias": metricas_diarias,
-            "analisis_ia": analisis_ia,
-            "top_anuncios": top_anuncios,
-            "moneda": moneda,
-            "metricas_hoy": metricas_hoy,
-            "metricas_ayer": metricas_ayer,
-            "comparativa": calcular_comparativa(metricas_hoy, metricas_ayer),
-            "ranking_data": ranking_data
-        }
-
-        return jsonify(resultado_final)
-
-    except Exception as e:
-        logging.error(f"Error en /analizar_campana: {e}", exc_info=True)
-        return jsonify({"error": f"Ocurrió un error en el servidor: {e}"}), 500
+    return jsonify(rows_out)

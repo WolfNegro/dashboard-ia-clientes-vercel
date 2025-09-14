@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Centro de Comando — Vista General</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/static/css/main.css" />
+  <style>
+    :root { --panel:#0e1622; --line:rgba(255,255,255,.08); }
+    .wrap{max-width:1280px;margin:24px auto;padding:0 16px}
+    .h1{font-size:28px;font-weight:800;margin:0 0 14px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+    .card{background:#0d1420;border:1px solid var(--line);border-radius:16px;padding:14px}
+    .muted{color:rgba(255,255,255,.7)}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+    .seg .opt{background:#0f1a2c;border:1px solid var(--line);color:#c7d2fe;padding:8px 12px;border-radius:10px;cursor:pointer}
+    .seg .opt.active{background:#2563eb;border-color:#2563eb;color:#fff}
+    .range{display:none;gap:6px;align-items:center}
+    .range.show{display:flex}
+    input[type="date"]{background:#0f1a2b;color:#fff;border:1px solid var(--line);padding:8px 10px;border-radius:8px}
+    .btn{background:#2563eb;border:none;color:#fff;padding:9px 14px;border-radius:10px;cursor:pointer}
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .btn .spin{display:none;margin-left:8px;width:14px;height:14px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:sp 1s linear infinite}
+    .btn.loading .spin{display:inline-block}
+    @keyframes sp{to{transform:rotate(360deg)}}
+    .badge{display:inline-block;background:#0f1a2b;border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:12px;margin:4px 6px 0 0}
+    a.btn-link{background:#2563eb;color:#fff;text-decoration:none;padding:9px 14px;border-radius:10px;display:inline-block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="h1">Centro de Comando — Vista General</div>
+
+    <div class="row">
+      <div class="seg" id="seg">
+        <button class="opt active" data-preset="today">Hoy</button>
+        <button class="opt" data-preset="yesterday">Ayer</button>
+        <button class="opt" data-preset="last_7d">7 días</button>
+        <button class="opt" data-preset="this_month">Mes actual</button>
+        <button class="opt" data-preset="last_month">Mes pasado</button>
+        <button class="opt" data-preset="range" id="opt-range">Rango</button>
+        <div class="range" id="range">
+          <input type="date" id="since">
+          <span class="muted">a</span>
+          <input type="date" id="until">
+        </div>
+      </div>
+      <button id="apply" class="btn">Aplicar <span class="spin"></span></button>
+      <a href="/" class="btn">Dashboard de cliente</a>
+    </div>
+
+    <div id="cards" class="grid"></div>
+  </div>
+
+  <script src="/static/js/overview.js"></script>
+</body>
+</html>
