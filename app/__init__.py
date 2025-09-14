@@ -77,3 +77,6 @@ def create_app():
         return render_template("error.html", code=500, message="Error interno"), 500
 
     return app
+
+# Importa rutas de clientas (/s/<slug>)
+from app import client_routes
