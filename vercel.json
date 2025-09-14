@@ -4,11 +4,9 @@
     { "src": "run.py", "use": "@vercel/python" }
   ],
   "routes": [
-    // archivos estáticos directos
     { "src": "^/static/(.*)$", "dest": "app/static/$1" },
     { "src": "^/(favicon\\.ico|robots\\.txt)$", "dest": "app/static/$1" },
 
-    // tus rutas ya existentes
     { "src": "^/$", "dest": "run.py" },
     { "src": "^/overview$", "dest": "run.py" },
     { "src": "^/dashboard/[^/]+$", "dest": "run.py" },
@@ -16,12 +14,10 @@
     { "src": "^/get_campaigns_active/.*$", "dest": "run.py" },
     { "src": "^/get_ads_by_campaign/.*$", "dest": "run.py" },
 
-    // NUEVAS rutas de magic/admin/logout -> Python
     { "src": "^/s/[^/]+$", "dest": "run.py" },
     { "src": "^/admin$", "dest": "run.py" },
     { "src": "^/logout$", "dest": "run.py" },
 
-    // catch-all final (por si aparece otra ruta dinámica)
     { "src": "^(?!/static/).*$", "dest": "run.py" }
   ]
 }
