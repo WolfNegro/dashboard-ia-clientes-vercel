@@ -1,23 +1,10 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "run.py", "use": "@vercel/python" }
-  ],
+  "builds": [{ "src": "api/index.py", "use": "@vercel/python" }],
   "routes": [
-    { "src": "^/static/(.*)$", "dest": "app/static/$1" },
-    { "src": "^/(favicon\\.ico|robots\\.txt)$", "dest": "app/static/$1" },
-
-    { "src": "^/$", "dest": "run.py" },
-    { "src": "^/overview$", "dest": "run.py" },
-    { "src": "^/dashboard/[^/]+$", "dest": "run.py" },
-    { "src": "^/api/overview$", "dest": "run.py" },
-    { "src": "^/get_campaigns_active/.*$", "dest": "run.py" },
-    { "src": "^/get_ads_by_campaign/.*$", "dest": "run.py" },
-
-    { "src": "^/s/[^/]+$", "dest": "run.py" },
-    { "src": "^/admin$", "dest": "run.py" },
-    { "src": "^/logout$", "dest": "run.py" },
-
-    { "src": "^(?!/static/).*$", "dest": "run.py" }
+    { "src": "^/static/(.*)$", "dest": "/static/$1" },
+    { "src": "^/s/(.*)$", "dest": "api/index.py" },
+    { "src": "^/(admin|login)(/.*)?$", "dest": "api/index.py" },
+    { "src": "^(?!/api/).*", "dest": "api/index.py" }
   ]
 }
