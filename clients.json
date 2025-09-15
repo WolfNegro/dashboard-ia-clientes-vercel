@@ -1,38 +1,38 @@
 {
   "clinic_prime": {
+    "slug": "clinic_prime",
     "client_name": "Clinic Prime",
-    "ad_account_ids": [
-      "act_1936205300197961"
-    ]
+    "client_id": null,
+    "ad_account_ids": ["act_1936205300197961"]
   },
   "dra_pia": {
+    "slug": "dra_pia",
     "client_name": "Dra Pia",
-    "ad_account_ids": [
-      "act_656429489968746"
-    ]
+    "client_id": null,
+    "ad_account_ids": ["act_656429489968746"]
   },
   "harmony": {
+    "slug": "harmony",
     "client_name": "Harmony",
-    "ad_account_ids": [
-      "act_108136003058369"
-    ]
+    "client_id": null,
+    "ad_account_ids": ["act_108136003058369"]
   },
   "mc_dent": {
+    "slug": "mc_dent",
     "client_name": "Mc Dent",
-    "ad_account_ids": [
-      "act_1134230691934672"
-    ]
+    "client_id": null,
+    "ad_account_ids": ["act_1134230691934672"]
   },
   "amaru": {
+    "slug": "amaru",
     "client_name": "Amaru",
-    "ad_account_ids": [
-      "act_467988697275854"
-    ]
+    "client_id": null,
+    "ad_account_ids": ["act_467988697275854"]
   },
   "dra_claudia": {
+    "slug": "dra_claudia",
     "client_name": "Dra Claudia",
-    "ad_account_ids": [
-      "act_2445384242513718"
-    ]
+    "client_id": null,
+    "ad_account_ids": ["act_2445384242513718"]
   }
 }

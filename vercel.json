@@ -2,9 +2,7 @@
   "version": 2,
   "builds": [{ "src": "api/index.py", "use": "@vercel/python" }],
   "routes": [
-    { "src": "^/static/(.*)$", "dest": "/static/$1" },
     { "src": "^/s/(.*)$", "dest": "api/index.py" },
-    { "src": "^/(admin|login)(/.*)?$", "dest": "api/index.py" },
     { "src": "^(?!/api/).*", "dest": "api/index.py" }
   ]
 }

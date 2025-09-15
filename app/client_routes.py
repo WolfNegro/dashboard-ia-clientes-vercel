@@ -1,8 +1,10 @@
 # app/client_routes.py
-from flask import render_template
-from app import app
+# Shim para evitar import circular. NO importa 'app' aquí.
+# Solo expone el blueprint y una función opcional de registro.
 
-@app.route("/s/<slug>")
-def client_slug(slug):
-    # Renderiza tu plantilla principal y pasa el slug (la plantilla puede ignorarlo si no lo usa)
-    return render_template("index.html", slug=slug)
+from app.blueprints.client_slug import client_bp
+
+def init_app(app):
+    """Registrar el blueprint si aún no está registrado (opcional)."""
+    if "client_bp" not in app.blueprints:
+        app.register_blueprint(client_bp)
