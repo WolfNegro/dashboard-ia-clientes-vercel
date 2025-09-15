@@ -1,24 +1,25 @@
-# api/index.py
-# Entry robusto para Vercel: obtiene la Flask app sin ciclos y registra el blueprint /s/<slug>
-
+# app/api/index.py
+# Entry para Vercel cuando el Root Directory es "app/"
 import importlib
 
 app = None
 
-# 1) Intento estándar: app/__init__.py expone 'app'
+# A) intentar obtener la app expuesta en app/__init__.py
 try:
-    app = importlib.import_module("app").app  # from app import app
+    pkg = importlib.import_module("app")
+    if hasattr(pkg, "app"):
+        app = pkg.app
 except Exception:
     app = None
 
-# 2) Si no existe, intenta run.py con 'app'
+# B) intentar run.py
 if app is None:
     try:
-        app = importlib.import_module("run").app  # from run import app
+        app = importlib.import_module("run").app
     except Exception:
         app = None
 
-# 3) Si el proyecto usa factory
+# C) factory create_app()
 if app is None:
     try:
         pkg = importlib.import_module("app")
@@ -30,10 +31,10 @@ if app is None:
 if app is None:
     raise RuntimeError("No se pudo obtener la instancia Flask ('app') ni un 'create_app()' válido.")
 
-# Registrar el blueprint de /s/<slug> (no interfiere con rutas existentes)
+# Registrar el blueprint /s/<slug> (no interfiere con rutas existentes)
 from app.blueprints.client_slug import client_bp
 if "client_bp" not in app.blueprints:
     app.register_blueprint(client_bp)
 
-# Alias para algunos runtimes
+# Alias
 application = app
